@@ -28281,7 +28281,7 @@ var SETDEX_SV = {
   "Meganium-Mega": {
     "Aroma Lady Rose": {
       "level": 72,
-      "ability": "Flower Veil",
+      "ability": "Triage",
       "status": "Healthy",
       "moves": [
         "Moonblast",
