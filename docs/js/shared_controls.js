@@ -47,6 +47,52 @@ var CALC_STATUS = {
 	'Frozen': 'frz'
 };
 
+var SET_STATUS_ALIASES = {
+	'': 'Healthy',
+	'None': 'Healthy',
+	'none': 'Healthy',
+	'healthy': 'Healthy',
+	'brn': 'Burned',
+	'burn': 'Burned',
+	'Burn': 'Burned',
+	'par': 'Paralyzed',
+	'paralysis': 'Paralyzed',
+	'Paralysis': 'Paralyzed',
+	'psn': 'Poisoned',
+	'poison': 'Poisoned',
+	'Poison': 'Poisoned',
+	'tox': 'Badly Poisoned',
+	'toxic': 'Badly Poisoned',
+	'Toxic': 'Badly Poisoned',
+	'frz': 'Frozen',
+	'freeze': 'Frozen',
+	'slp': 'Asleep',
+	'sleep': 'Asleep',
+	'Sleep': 'Asleep',
+	'frb': 'Frostbite'
+};
+
+function normalizeSetStatus(status) {
+	if (!status) {
+		return 'Healthy';
+	}
+	var trimmed = String(status).trim();
+	if (trimmed in CALC_STATUS) {
+		return trimmed;
+	}
+	if (trimmed in SET_STATUS_ALIASES) {
+		return SET_STATUS_ALIASES[trimmed];
+	}
+	var lower = trimmed.toLowerCase();
+	var key;
+	for (key in CALC_STATUS) {
+		if (key.toLowerCase() === lower) {
+			return key;
+		}
+	}
+	return 'Healthy';
+}
+
 function legacyStatToStat(st) {
 	switch (st) {
 		case 'hp':
@@ -1515,6 +1561,7 @@ $(".set-selector").change(function () {
 		var itemObj = pokeObj.find(".item");
 		var randset = $("#randoms").prop("checked") ? randdex[pokemonName] : undefined;
 		var regSets = setdexKey in setdex && setName in setdex[setdexKey];
+		var regSetForStatus = null;
 
 		if (randset) {
 			var listItems = randdex[pokemonName].items ? randdex[pokemonName].items : [];
@@ -1551,6 +1598,7 @@ $(".set-selector").change(function () {
 		if (regSets || randset) {
 			var set = regSets ? correctHiddenPower(setdex[setdexKey][setName]) : randset;
 			if (regSets) {
+				regSetForStatus = set;
 				pokeObj.find(".teraType").val(set.teraType || pokemon.types[0]);
 			}
 			pokeObj.find(".level").val(set.level);
@@ -1653,6 +1701,13 @@ $(".set-selector").change(function () {
 		pokeObj.find(".traceCopyOpponent").prop("checked", false);
 		abilityObj.change();
 		itemObj.change();
+		if (regSetForStatus && regSetForStatus.status) {
+			var loadedItem = itemObj.val();
+			if (loadedItem !== "Flame Orb" && loadedItem !== "Toxic Orb") {
+				setSelectValueIfValid(pokeObj.find(".status"), normalizeSetStatus(regSetForStatus.status), "Healthy");
+				pokeObj.find(".status").change();
+			}
+		}
 		if (pokemon.gender === "N") {
 			pokeObj.find(".gender").parent().addClass("gender-empty").show();
 			pokeObj.find(".gender").val("");
