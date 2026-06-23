@@ -23,6 +23,13 @@ var GAUNTLET_LIST = [
 	{ name: "6v8 Doubles", trainers: ["Trainer Maxie", "Trainer Archie"] },
 	{ name: "B2B", trainers: ["Teacher Anabel", "Frontier Head Noland"] },
 	{ name: "B2B", trainers: ["Pokéfan Isabel", "Pokéfan Kaleb"] },
+	{ name: "Random Team", trainers: ["Rival Wally 1", "Rival Wally 2", "Rival Wally 3"] },
+	{ name: "Random Team", trainers: ["Adventurer Brandon 1", "Adventurer Brandon 2"] },
+	{ name: "Random Team", trainers: ["Naturalist Greta 1", "Naturalist Greta 2"] },
+	{ name: "Random Team", trainers: ["Natural Guru Spenser 1", "Natural Guru Spenser 2"] },
+	{ name: "Random Team", trainers: ["Battle Queen Lucy 1", "Battle Queen Lucy 2"] },
+	{ name: "Random Team", trainers: ["Superstar Tucker 1", "Superstar Tucker 2"] },
+
 ];
 
 function trainerNamesMatch(gauntletName, setNameTrainer) {
