@@ -16902,7 +16902,7 @@ var SETDEX_SV = {
   "Sceptile-Mega": {
     "Leader Wattson": {
       "level": 58,
-      "ability": "LLightning Rod",
+      "ability": "Lightning Rod",
       "status": "Healthy",
       "moves": [
         "Energy Ball",
@@ -16916,7 +16916,7 @@ var SETDEX_SV = {
     },
     "Pokémon Trainer Leaf 2": {
       "level": 99,
-      "ability": "LLightning Rod",
+      "ability": "Lightning Rod",
       "status": "Healthy",
       "moves": [
         "Leaf Storm",
@@ -28678,7 +28678,7 @@ var SETDEX_SV = {
   "Meganium-Mega": {
     "Aroma Lady Rose": {
       "level": 72,
-      "ability": "Flower Veil",
+      "ability": "Triage",
       "status": "Healthy",
       "moves": [
         "Moonblast",
