@@ -28,57 +28,61 @@ function hashCode(str) {
     return hash;
 }
 
-// Convert mgba stat keys to showdown stat names
-function mapStat(stat) {
-    const map = { hp: "HP", atk: "Atk", def: "Def", spa: "SpA", spd: "SpD", spe: "Spe" };
-    return map[stat] || stat;
-}
-
 // Format an individual mGBA mon object into a Showdown text block
-function monToShowdownText(mon, identifier) {
-    if (!mon || !mon.species || mon.species === "None" || mon.species === "0") return null;
+function monToShowdownText(mon) {
+    let species = mon.speciesName || mon.species;
+    if (!species || species === "None" || species === "0" || species === 0) return null;
+    if (mon.isEgg || mon.isBadEgg) return null;
 
     // Build header: Nickname (Species) @ Item
     let header = "";
-    if (mon.nickname && mon.nickname !== mon.species) {
-        header += `${mon.nickname} (${mon.species})`;
+    if (mon.nickname && mon.nickname !== species) {
+        header += `${mon.nickname} (${species})`;
     } else {
-        header += mon.species;
+        header += species;
     }
     
-    if (mon.heldItem && mon.heldItem !== "None") {
-        header += ` @ ${mon.heldItem}`;
+    let item = mon.heldItem || mon.itemName || mon.heldItemName;
+    if (item && item !== "None" && item !== "0") {
+        header += ` @ ${item}`;
     }
 
     let text = header + "\n";
-    if (mon.ability && mon.ability !== "None") text += `Ability: ${mon.ability}\n`;
-    if (mon.level) text += `Level: ${mon.level}\n`;
+    
+    let ability = mon.ability || mon.abilityName;
+    if (ability && ability !== "None") text += `Ability: ${ability}\n`;
+    
+    let level = mon.level || mon.metLevel;
+    if (level) text += `Level: ${level}\n`;
 
     // EVs
-    if (mon.evs) {
-        let evStrings = [];
-        for (const [stat, val] of Object.entries(mon.evs)) {
-            if (val > 0) evStrings.push(`${val} ${mapStat(stat)}`);
-        }
-        if (evStrings.length > 0) text += `EVs: ${evStrings.join(" / ")}\n`;
-    }
+    let evStrings = [];
+    if (mon.hpEV > 0) evStrings.push(`${mon.hpEV} HP`);
+    if (mon.attackEV > 0) evStrings.push(`${mon.attackEV} Atk`);
+    if (mon.defenseEV > 0) evStrings.push(`${mon.defenseEV} Def`);
+    if (mon.spAttackEV > 0) evStrings.push(`${mon.spAttackEV} SpA`);
+    if (mon.spDefenseEV > 0) evStrings.push(`${mon.spDefenseEV} SpD`);
+    if (mon.speedEV > 0) evStrings.push(`${mon.speedEV} Spe`);
+    
+    if (evStrings.length > 0) text += `EVs: ${evStrings.join(" / ")}\n`;
 
-    // IVs
-    if (mon.ivs) {
-        let ivStrings = [];
-        for (const [stat, val] of Object.entries(mon.ivs)) {
-            // Showdown assumes 31 IVs unless specified, so we only need to list if < 31
-            // But to be safe and precise with imported sets, we'll list all non-31 IVs.
-            if (val < 31) ivStrings.push(`${val} ${mapStat(stat)}`);
-        }
-        if (ivStrings.length > 0) text += `IVs: ${ivStrings.join(" / ")}\n`;
-    }
+    // IVs (Showdown assumes 31, only list if < 31)
+    let ivStrings = [];
+    if (mon.hpIV !== undefined && mon.hpIV < 31) ivStrings.push(`${mon.hpIV} HP`);
+    if (mon.attackIV !== undefined && mon.attackIV < 31) ivStrings.push(`${mon.attackIV} Atk`);
+    if (mon.defenseIV !== undefined && mon.defenseIV < 31) ivStrings.push(`${mon.defenseIV} Def`);
+    if (mon.spAttackIV !== undefined && mon.spAttackIV < 31) ivStrings.push(`${mon.spAttackIV} SpA`);
+    if (mon.spDefenseIV !== undefined && mon.spDefenseIV < 31) ivStrings.push(`${mon.spDefenseIV} SpD`);
+    if (mon.speedIV !== undefined && mon.speedIV < 31) ivStrings.push(`${mon.speedIV} Spe`);
+    
+    if (ivStrings.length > 0) text += `IVs: ${ivStrings.join(" / ")}\n`;
 
     if (mon.nature && mon.nature !== "None") text += `${mon.nature} Nature\n`;
 
     // Moves
-    if (mon.moves && mon.moves.length > 0) {
-        mon.moves.forEach(move => {
+    let moves = mon.moveNames || mon.moves;
+    if (moves && moves.length > 0) {
+        moves.forEach(move => {
             if (move && move !== "None" && move !== "(No Move)") {
                 text += `- ${move}\n`;
             }
@@ -148,12 +152,11 @@ function processPayload(data) {
                     return;
                 }
             }
-            if (slotData.mon) {
-                let text = monToShowdownText(slotData.mon);
-                if (text) {
-                    addSets(text, `mGBA B${slotData.box + 1} S${slotData.slot + 1}`);
-                    importedCount++;
-                }
+            // In the JSON provided, slotData ITSELF is the Pokemon object
+            let text = monToShowdownText(slotData);
+            if (text) {
+                addSets(text, `mGBA B${slotData.box + 1} S${slotData.slot + 1}`);
+                importedCount++;
             }
         });
     }
