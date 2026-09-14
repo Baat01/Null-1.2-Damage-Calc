@@ -1,104 +1,131 @@
 /**
  * mGBA Live Auto-Sync Integration
  * Connects to the local Vs. Link / Vs. Recorder server on port 31123.
+ *
+ * Features:
+ *   1. Manual one-shot sync button  (🔄 Synchroniser Maintenant)
+ *   2. Auto-Sync toggle with polling loop  (🔁 Auto-Sync : ON/OFF)
+ *   3. "Sans objets / No Items" checkbox — strips held items on import
+ *   4. Set name mirrors native Import button (.import-name-text or "Custom Set")
+ *      Nicknamed Pokémon → nickname used as set key automatically via addSets() parser.
+ *      Non-nicknamed Pokémon → falls back to the import name field value.
  */
 
 const MGBA_SYNC_URL = "http://localhost:31123/vs/all";
-const FALLBACK_URL = "http://localhost:31123/update";
+const FALLBACK_URL  = "http://localhost:31123/update";
 
 const SyncState = {
-    ENABLED: false,
-    POLL_INTERVAL: 3000,
-    LAST_HASH: null,
-    TIMEOUT_ID: null,
+    ENABLED:         false,
+    POLL_INTERVAL:   3000,
+    LAST_HASH:       null,
+    TIMEOUT_ID:      null,
+    MANUAL_FETCHING: false,
     SETTINGS: {
-        includePc: true,
-        excludeDeadBox: true
+        includePc:      true,
+        excludeDeadBox: true,
+        stripItems:     false
     }
 };
 
-// Simple string hashing function to avoid redundant DOM updates
+// ─── Utilities ─────────────────────────────────────────────────────────────────
+
+/** djb2-style hash — skip redundant DOM updates when auto-sync data is unchanged. */
 function hashCode(str) {
     let hash = 0;
     for (let i = 0, len = str.length; i < len; i++) {
-        let chr = str.charCodeAt(i);
-        hash = (hash << 5) - hash + chr;
-        hash |= 0; // Convert to 32bit integer
+        hash = (hash << 5) - hash + str.charCodeAt(i);
+        hash |= 0;
     }
     return hash;
 }
 
-// Format an individual mGBA mon object into a Showdown text block
-function monToShowdownText(mon) {
-    let species = mon.speciesName || mon.species;
+/**
+ * Read the set-name exactly as the native Import button does:
+ *   → .import-name-text value if non-empty, else "Custom Set"
+ */
+function getImportSetName() {
+    const el = document.getElementsByClassName("import-name-text")[0];
+    const v  = el && el.value.trim();
+    return v || "Custom Set";
+}
+
+// ─── Showdown Text Builder ─────────────────────────────────────────────────────
+
+/**
+ * Convert one mGBA mon object → a Showdown paste text block.
+ * @param {object}  mon
+ * @param {{ stripItems?: boolean }} opts
+ * @returns {string|null}
+ */
+function monToShowdownText(mon, { stripItems = false } = {}) {
+    const species = mon.speciesName || mon.species;
     if (!species || species === "None" || species === "0" || species === 0) return null;
     if (mon.isEgg || mon.isBadEgg) return null;
 
-    // Build header: Nickname (Species) @ Item
-    let header = "";
-    if (mon.nickname && mon.nickname !== species) {
-        header += `${mon.nickname} (${species})`;
-    } else {
-        header += species;
-    }
-    
-    let item = mon.heldItem || mon.itemName || mon.heldItemName;
-    if (item && item !== "None" && item !== "0") {
-        header += ` @ ${item}`;
+    // Header: "Nickname (Species) @ Item"  OR  "Species @ Item"
+    // When a nickname is present, addSets() will automatically promote it as the
+    // dropdown set-key (nameProp), overriding the fallback name argument.
+    let header = (mon.nickname && mon.nickname !== species)
+        ? `${mon.nickname} (${species})`
+        : species;
+
+    if (!stripItems) {
+        const item = mon.heldItem || mon.itemName || mon.heldItemName;
+        if (item && item !== "None" && item !== "0") header += ` @ ${item}`;
     }
 
     let text = header + "\n";
-    
-    let ability = mon.ability || mon.abilityName;
+
+    const ability = mon.ability || mon.abilityName;
     if (ability && ability !== "None") text += `Ability: ${ability}\n`;
-    
-    let level = mon.level || mon.metLevel;
+
+    const level = mon.level || mon.metLevel;
     if (level) text += `Level: ${level}\n`;
 
     // EVs
-    let evStrings = [];
-    if (mon.hpEV > 0) evStrings.push(`${mon.hpEV} HP`);
-    if (mon.attackEV > 0) evStrings.push(`${mon.attackEV} Atk`);
-    if (mon.defenseEV > 0) evStrings.push(`${mon.defenseEV} Def`);
-    if (mon.spAttackEV > 0) evStrings.push(`${mon.spAttackEV} SpA`);
-    if (mon.spDefenseEV > 0) evStrings.push(`${mon.spDefenseEV} SpD`);
-    if (mon.speedEV > 0) evStrings.push(`${mon.speedEV} Spe`);
-    
-    if (evStrings.length > 0) text += `EVs: ${evStrings.join(" / ")}\n`;
+    const evParts = [];
+    if (mon.hpEV        > 0) evParts.push(`${mon.hpEV} HP`);
+    if (mon.attackEV    > 0) evParts.push(`${mon.attackEV} Atk`);
+    if (mon.defenseEV   > 0) evParts.push(`${mon.defenseEV} Def`);
+    if (mon.spAttackEV  > 0) evParts.push(`${mon.spAttackEV} SpA`);
+    if (mon.spDefenseEV > 0) evParts.push(`${mon.spDefenseEV} SpD`);
+    if (mon.speedEV     > 0) evParts.push(`${mon.speedEV} Spe`);
+    if (evParts.length)      text += `EVs: ${evParts.join(" / ")}\n`;
 
-    // IVs (Showdown assumes 31, only list if < 31)
-    let ivStrings = [];
-    if (mon.hpIV !== undefined && mon.hpIV < 31) ivStrings.push(`${mon.hpIV} HP`);
-    if (mon.attackIV !== undefined && mon.attackIV < 31) ivStrings.push(`${mon.attackIV} Atk`);
-    if (mon.defenseIV !== undefined && mon.defenseIV < 31) ivStrings.push(`${mon.defenseIV} Def`);
-    if (mon.spAttackIV !== undefined && mon.spAttackIV < 31) ivStrings.push(`${mon.spAttackIV} SpA`);
-    if (mon.spDefenseIV !== undefined && mon.spDefenseIV < 31) ivStrings.push(`${mon.spDefenseIV} SpD`);
-    if (mon.speedIV !== undefined && mon.speedIV < 31) ivStrings.push(`${mon.speedIV} Spe`);
-    
-    if (ivStrings.length > 0) text += `IVs: ${ivStrings.join(" / ")}\n`;
+    // IVs (Showdown assumes 31; only list sub-31 values)
+    const ivParts = [];
+    if (mon.hpIV        !== undefined && mon.hpIV        < 31) ivParts.push(`${mon.hpIV} HP`);
+    if (mon.attackIV    !== undefined && mon.attackIV    < 31) ivParts.push(`${mon.attackIV} Atk`);
+    if (mon.defenseIV   !== undefined && mon.defenseIV   < 31) ivParts.push(`${mon.defenseIV} Def`);
+    if (mon.spAttackIV  !== undefined && mon.spAttackIV  < 31) ivParts.push(`${mon.spAttackIV} SpA`);
+    if (mon.spDefenseIV !== undefined && mon.spDefenseIV < 31) ivParts.push(`${mon.spDefenseIV} SpD`);
+    if (mon.speedIV     !== undefined && mon.speedIV     < 31) ivParts.push(`${mon.speedIV} Spe`);
+    if (ivParts.length) text += `IVs: ${ivParts.join(" / ")}\n`;
 
     if (mon.nature && mon.nature !== "None") text += `${mon.nature} Nature\n`;
 
     // Moves
-    let moves = mon.moveNames || mon.moves;
+    const moves = mon.moveNames || mon.moves;
     if (moves && moves.length > 0) {
         moves.forEach(move => {
-            if (move && move !== "None" && move !== "(No Move)") {
-                text += `- ${move}\n`;
-            }
+            if (move && move !== "None" && move !== "(No Move)") text += `- ${move}\n`;
         });
     }
 
     return text.trim();
 }
 
-// Ensure old synced sets are wiped if the team changes, so we don't build up ghosts
+// ─── Ghost-Set Wipe ────────────────────────────────────────────────────────────
+
+/**
+ * Remove any sets whose key starts with "mGBA " (legacy slot-key format).
+ * This keeps the set list clean across sync cycles and prevents stale entries
+ * from accumulating when a Pokémon is removed from the party / box.
+ */
 function wipeOldMgbaSets() {
     if (!localStorage.customsets) return;
     let customsets;
-    try {
-        customsets = JSON.parse(localStorage.customsets);
-    } catch(e) { return; }
+    try { customsets = JSON.parse(localStorage.customsets); } catch (e) { return; }
 
     let changed = false;
     for (const species in customsets) {
@@ -109,102 +136,172 @@ function wipeOldMgbaSets() {
                 changed = true;
             }
         }
-        if (Object.keys(customsets[species]).length === 0) {
-            delete customsets[species];
-        }
+        if (Object.keys(customsets[species]).length === 0) delete customsets[species];
     }
-    
+
     if (changed) {
-        // Just clear the UI box markers matching mGBA
         $("#box-poke-list .trainer-pok, #box-poke-list2 .trainer-pok, #team-poke-list .trainer-pok").each(function () {
-            let dataId = $(this).attr("data-id") || "";
-            if (dataId.includes("mGBA ")) {
-                $(this).remove();
-            }
+            if (($(this).attr("data-id") || "").includes("mGBA ")) $(this).remove();
         });
     }
 }
 
+// ─── Payload Processing ────────────────────────────────────────────────────────
 
-function processPayload(data) {
-    let importedCount = 0;
-    
-    // First, clear previous mGBA sets so ghosts disappear
+/**
+ * Parse the JSON payload from mGBA and import all Pokémon as custom sets.
+ *
+ * Set-key resolution (mirrors addSets() parser behaviour):
+ *   • Nickname present → addSets() extracts it from the "Nickname (Species)" header → key = nickname.
+ *   • No nickname      → key = setName (from .import-name-text, or "Custom Set").
+ *
+ * @param {object} data
+ * @param {{ stripItems?: boolean }} opts
+ * @returns {number} number of Pokémon successfully imported
+ */
+function processPayload(data, { stripItems = false } = {}) {
+    // Mirror the native Import button: read .import-name-text or fall back to "Custom Set"
+    const setName = getImportSetName();
+
+    // Purge legacy "mGBA "-prefixed sets before re-import
     wipeOldMgbaSets();
 
-    // Process Party
+    let importedCount = 0;
+
+    // Party
     if (data.party && data.party.length > 0) {
-        data.party.forEach((mon, index) => {
-            let text = monToShowdownText(mon);
+        data.party.forEach((mon) => {
+            const text = monToShowdownText(mon, { stripItems });
             if (text) {
-                // By providing a unique name like "mGBA Party 1", addSets overwrites gracefully
-                addSets(text, `mGBA Party ${index + 1}`);
+                addSets(text, setName);
                 importedCount++;
             }
         });
     }
 
-    // Process PC Boxes
+    // PC Boxes
     if (SyncState.SETTINGS.includePc && data.boxes && data.boxes.length > 0) {
         data.boxes.forEach(slotData => {
             if (SyncState.SETTINGS.excludeDeadBox) {
-                if (slotData.isDeadBox || (slotData.box >= 11 && slotData.box <= 13)) {
-                    return;
-                }
+                if (slotData.isDeadBox || (slotData.box >= 11 && slotData.box <= 13)) return;
             }
-            // In the JSON provided, slotData ITSELF is the Pokemon object
-            let text = monToShowdownText(slotData);
+            const text = monToShowdownText(slotData, { stripItems });
             if (text) {
-                addSets(text, `mGBA B${slotData.box + 1} S${slotData.slot + 1}`);
+                addSets(text, setName);
                 importedCount++;
             }
         });
     }
-    
+
     return importedCount;
 }
 
+// ─── Status UI ─────────────────────────────────────────────────────────────────
+
 function updateStatusUI(message, isError = false) {
-    const statusEl = document.getElementById("mgba-sync-status");
-    if (statusEl) {
-        statusEl.textContent = message;
-        statusEl.style.color = isError ? "#ff6b6b" : "#4ade80"; // Red for error, Green for OK
-        if (message === "Déconnecté" || message === "Recherche...") {
-            statusEl.style.color = "#a0aab5"; // Neutral
+    const el = document.getElementById("mgba-sync-status");
+    if (!el) return;
+    el.textContent = message;
+    if (isError) {
+        el.style.color = "#ff6b6b";
+    } else if (message === "Déconnecté" || message === "Recherche...") {
+        el.style.color = "#a0aab5";
+    } else {
+        el.style.color = "#4ade80";
+    }
+}
+
+// ─── Low-level Fetch Helper ────────────────────────────────────────────────────
+
+/**
+ * Fetch raw text from the mGBA server, trying the primary URL then the fallback.
+ * @returns {Promise<string>} raw JSON text
+ * @throws {Error} when neither endpoint responds successfully
+ */
+async function fetchMgbaRaw() {
+    let response;
+    try {
+        response = await fetch(MGBA_SYNC_URL);
+        if (!response.ok) response = await fetch(FALLBACK_URL);
+    } catch (_) {
+        throw new Error("mGBA non détecté");
+    }
+    if (!response.ok) throw new Error("mGBA non détecté");
+    return response.text();
+}
+
+// ─── Manual One-Shot Sync ──────────────────────────────────────────────────────
+
+/**
+ * Perform a single, unconditional import (no hash guard).
+ * Called by the "Synchroniser Maintenant" button.
+ */
+async function triggerManualSync() {
+    if (SyncState.MANUAL_FETCHING) return;
+    SyncState.MANUAL_FETCHING = true;
+
+    const btn          = document.getElementById("mgba-sync-now-btn");
+    const originalText = btn ? btn.textContent : "";
+
+    if (btn) {
+        btn.disabled    = true;
+        btn.textContent = "Syncing...";
+    }
+    updateStatusUI("Recherche...");
+
+    try {
+        const stripItems = SyncState.SETTINGS.stripItems;
+        const rawText    = await fetchMgbaRaw();
+        const data       = JSON.parse(rawText);
+        const count      = processPayload(data, { stripItems });
+
+        // Reset hash so the auto-sync loop re-imports fresh on its next tick
+        SyncState.LAST_HASH = null;
+
+        const timeStr = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+        updateStatusUI(`Sync manuel : ${count} Pokémon (${timeStr})`);
+        if (btn) btn.textContent = `${count} OK`;
+
+    } catch (err) {
+        updateStatusUI("Erreur: mGBA non détecté", true);
+        if (btn) btn.textContent = "Erreur";
+
+    } finally {
+        SyncState.MANUAL_FETCHING = false;
+        if (btn) {
+            setTimeout(() => {
+                btn.textContent = originalText;
+                btn.disabled    = false;
+            }, 2000);
         }
     }
 }
 
+// ─── Auto-Sync Polling Loop ────────────────────────────────────────────────────
+
+/**
+ * One tick of the polling loop.  Re-schedules itself while SyncState.ENABLED is true.
+ * Uses a hash guard to skip DOM updates when the mGBA data hasn't changed.
+ */
 async function pollServer() {
     if (!SyncState.ENABLED) return;
 
+    updateStatusUI("Recherche...");
+
     try {
-        updateStatusUI("Recherche...");
-        
-        let response = await fetch(MGBA_SYNC_URL);
-        if (!response.ok) {
-            response = await fetch(FALLBACK_URL);
-        }
+        const stripItems = SyncState.SETTINGS.stripItems;
+        const rawText    = await fetchMgbaRaw();
+        const hash       = hashCode(rawText);
 
-        if (response.ok) {
-            const rawText = await response.text();
-            const hash = hashCode(rawText);
-
-            if (hash !== SyncState.LAST_HASH) {
-                SyncState.LAST_HASH = hash;
-                const data = JSON.parse(rawText);
-                const count = processPayload(data);
-                
-                const now = new Date();
-                const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-                updateStatusUI(`Connecté (${count} Pokémon synchronisés - ${timeString})`);
-            } else {
-                // Just keep the last connected status time, no UI change needed if hash is same.
-                // It means we successfully connected but nothing changed.
-            }
-        } else {
-            updateStatusUI("Erreur: mGBA non détecté", true);
+        if (hash !== SyncState.LAST_HASH) {
+            SyncState.LAST_HASH = hash;
+            const data    = JSON.parse(rawText);
+            const count   = processPayload(data, { stripItems });
+            const timeStr = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+            updateStatusUI(`Connecté (${count} Pokémon synchronisés — ${timeStr})`);
         }
+        // Hash unchanged: connection OK but nothing new → leave the last status message.
+
     } catch (err) {
         updateStatusUI("Erreur: mGBA non détecté", true);
     }
@@ -214,12 +311,14 @@ async function pollServer() {
     }
 }
 
+// ─── Toggle Auto-Sync ─────────────────────────────────────────────────────────
+
 function toggleSync() {
     SyncState.ENABLED = !SyncState.ENABLED;
-    
+
     const btn = document.getElementById("mgba-sync-btn");
     if (btn) {
-        btn.textContent = SyncState.ENABLED ? "Auto-Sync mGBA : ON" : "Auto-Sync mGBA : OFF";
+        btn.textContent = SyncState.ENABLED ? "Auto-Sync : ON" : "Auto-Sync : OFF";
         btn.classList.toggle("bs-btn-success", SyncState.ENABLED);
         btn.classList.toggle("bs-btn-default", !SyncState.ENABLED);
     }
@@ -235,60 +334,94 @@ function toggleSync() {
     }
 }
 
+// ─── Settings Persistence ─────────────────────────────────────────────────────
+
 function saveSettings() {
     localStorage.setItem("mgbaSyncSettings", JSON.stringify({
-        enabled: SyncState.ENABLED,
-        includePc: SyncState.SETTINGS.includePc,
-        excludeDeadBox: SyncState.SETTINGS.excludeDeadBox
+        enabled:        SyncState.ENABLED,
+        includePc:      SyncState.SETTINGS.includePc,
+        excludeDeadBox: SyncState.SETTINGS.excludeDeadBox,
+        stripItems:     SyncState.SETTINGS.stripItems
     }));
 }
 
 function loadSettings() {
     const saved = localStorage.getItem("mgbaSyncSettings");
-    if (saved) {
-        try {
-            const parsed = JSON.parse(saved);
-            SyncState.ENABLED = !!parsed.enabled;
-            if (typeof parsed.includePc !== "undefined") SyncState.SETTINGS.includePc = parsed.includePc;
-            if (typeof parsed.excludeDeadBox !== "undefined") SyncState.SETTINGS.excludeDeadBox = parsed.excludeDeadBox;
-        } catch (e) {}
-    }
+    if (!saved) return;
+    try {
+        const p = JSON.parse(saved);
+        SyncState.ENABLED = !!p.enabled;
+        if (p.includePc      !== undefined) SyncState.SETTINGS.includePc      = p.includePc;
+        if (p.excludeDeadBox !== undefined) SyncState.SETTINGS.excludeDeadBox = p.excludeDeadBox;
+        if (p.stripItems     !== undefined) SyncState.SETTINGS.stripItems     = p.stripItems;
+    } catch (e) {}
 }
+
+// ─── UI Injection ─────────────────────────────────────────────────────────────
 
 function injectUI() {
     const wrapper = document.getElementById("import-1_wrapper");
-    if (!wrapper) return; // Might not exist on all calc pages
+    if (!wrapper) return; // Page may not have the import panel
 
     const syncBox = document.createElement("div");
     syncBox.className = "mgba-sync-container";
-    syncBox.style.marginBottom = "15px";
-    syncBox.style.padding = "10px";
-    syncBox.style.border = "1px solid var(--fieldset-color, #ccc)";
-    syncBox.style.borderRadius = "4px";
+    syncBox.style.cssText = [
+        "margin-bottom:15px",
+        "padding:10px",
+        "border:1px solid var(--fieldset-color, #ccc)",
+        "border-radius:4px"
+    ].join(";");
 
     syncBox.innerHTML = `
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-            <button id="mgba-sync-btn" class="bs-btn ${SyncState.ENABLED ? 'bs-btn-success' : 'bs-btn-default'}" style="margin-right: 15px; font-weight: bold;">
-                Auto-Sync mGBA : ${SyncState.ENABLED ? 'ON' : 'OFF'}
+        <!-- Row 1: action buttons + live status -->
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:8px;">
+            <button id="mgba-sync-now-btn"
+                    class="bs-btn bs-btn-primary"
+                    style="font-weight:bold; white-space:nowrap;"
+                    title="Import unique depuis mGBA (sans boucle de polling)">
+                Synchroniser Maintenant
             </button>
-            <span id="mgba-sync-status" style="flex-grow: 1; font-size: 0.9em; color: #a0aab5;">
+            <button id="mgba-sync-btn"
+                    class="bs-btn ${SyncState.ENABLED ? 'bs-btn-success' : 'bs-btn-default'}"
+                    style="font-weight:bold; white-space:nowrap;"
+                    title="Activer / désactiver la synchronisation automatique en boucle">
+                Auto-Sync : ${SyncState.ENABLED ? 'ON' : 'OFF'}
+            </button>
+            <span id="mgba-sync-status"
+                  style="flex-grow:1; font-size:0.9em; color:#a0aab5;
+                         min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
                 ${SyncState.ENABLED ? 'Recherche...' : 'Déconnecté'}
             </span>
         </div>
-        <div style="font-size: 0.85em; display: flex; gap: 15px;">
-            <label>
-                <input type="checkbox" id="mgba-sync-pc" ${SyncState.SETTINGS.includePc ? 'checked' : ''}>
+        <!-- Row 2: filter checkboxes -->
+        <div style="font-size:0.85em; display:flex; gap:15px; flex-wrap:wrap; align-items:center;">
+            <label style="display:flex; align-items:center; gap:4px; cursor:pointer;">
+                <input type="checkbox" id="mgba-sync-pc"
+                       ${SyncState.SETTINGS.includePc ? 'checked' : ''}>
                 Inclure les boîtes PC
             </label>
-            <label>
-                <input type="checkbox" id="mgba-sync-deadbox" ${SyncState.SETTINGS.excludeDeadBox ? 'checked' : ''}>
+            <label style="display:flex; align-items:center; gap:4px; cursor:pointer;">
+                <input type="checkbox" id="mgba-sync-deadbox"
+                       ${SyncState.SETTINGS.excludeDeadBox ? 'checked' : ''}>
                 Exclure la Dead Box (Boîtes 11 à 13)
+            </label>
+            <label style="display:flex; align-items:center; gap:4px; cursor:pointer;"
+                   title="Importe les Pokémon sans leur objet tenu">
+                <input type="checkbox" id="mgba-sync-strip-items"
+                       ${SyncState.SETTINGS.stripItems ? 'checked' : ''}>
+                Sans objets / No Items
             </label>
         </div>
     `;
 
-    // Insert right before the import form
     wrapper.parentNode.insertBefore(syncBox, wrapper);
+
+    // ── Event wiring ──────────────────────────────────────────────────────────
+
+    document.getElementById("mgba-sync-now-btn").addEventListener("click", (e) => {
+        e.preventDefault();
+        triggerManualSync();
+    });
 
     document.getElementById("mgba-sync-btn").addEventListener("click", (e) => {
         e.preventDefault();
@@ -297,18 +430,25 @@ function injectUI() {
 
     document.getElementById("mgba-sync-pc").addEventListener("change", (e) => {
         SyncState.SETTINGS.includePc = e.target.checked;
-        SyncState.LAST_HASH = null; // force re-parse next poll
+        SyncState.LAST_HASH = null; // Force re-parse on next auto-sync tick
         saveSettings();
     });
 
     document.getElementById("mgba-sync-deadbox").addEventListener("change", (e) => {
         SyncState.SETTINGS.excludeDeadBox = e.target.checked;
-        SyncState.LAST_HASH = null; // force re-parse next poll
+        SyncState.LAST_HASH = null;
+        saveSettings();
+    });
+
+    document.getElementById("mgba-sync-strip-items").addEventListener("change", (e) => {
+        SyncState.SETTINGS.stripItems = e.target.checked;
+        SyncState.LAST_HASH = null; // Force re-import so item stripping takes effect immediately
         saveSettings();
     });
 }
 
-// Initialize on DOM load
+// ─── Init ─────────────────────────────────────────────────────────────────────
+
 document.addEventListener("DOMContentLoaded", () => {
     loadSettings();
     injectUI();
