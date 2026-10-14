@@ -33,6 +33,9 @@
     /** @type {string}  currently active (display) move name, or '' */
     var _activeMove = '';
 
+    /** @type {string|null}  id of the active category filter, or null */
+    var _activeCategoryId = null;
+
     /** @type {string[]}  all move display-names extracted from learnsets (for autocomplete) */
     var _allMoveNames = [];
 
@@ -287,37 +290,103 @@
     };
     var ALL_MOVE_CLASSES = ['move-filter-known', 'move-filter-tutor', 'move-filter-tm', 'move-filter-scale'];
 
+    /** Priority order for choosing the best method across multiple moves. */
+    var METHOD_PRIORITY = { 'KNOWN': 4, 'TUTOR': 3, 'TM': 2, 'SCALE': 1 };
+
     /**
      * Apply (or remove) move-filter border classes on all box Pokémon elements.
-     * @param {string} moveName  display name; empty string removes all filters.
+     * @param {string|string[]} moveNameOrList  single display name, array of names, or '' to clear.
      */
-    function applyMoveFilter(moveName) {
+    function applyMoveFilter(moveNameOrList) {
+        var moveList = [];
+        if (Array.isArray(moveNameOrList)) {
+            moveList = moveNameOrList.filter(function (n) { return n && normaliseMoveKey(n); });
+        } else if (moveNameOrList) {
+            moveList = [moveNameOrList];
+        }
+
         var nodes = document.querySelectorAll(BOX_QUERY);
-        var searchKey = normaliseMoveKey(moveName);
 
         for (var i = 0; i < nodes.length; i++) {
             var el = nodes[i];
             // Always strip previous move-filter classes
             for (var c = 0; c < ALL_MOVE_CLASSES.length; c++) el.classList.remove(ALL_MOVE_CLASSES[c]);
-            if (!searchKey) continue;
+            if (!moveList.length) continue;
 
             var dataId = el.getAttribute('data-id');
             if (!dataId) continue;
 
-            var method = getMoveLearnMethod(dataId, moveName);
-            if (method && MOVE_CLASS[method]) el.classList.add(MOVE_CLASS[method]);
+            // For multi-move (category) mode: pick the highest-priority method
+            var bestMethod = null;
+            var bestPriority = 0;
+            for (var m = 0; m < moveList.length; m++) {
+                var method = getMoveLearnMethod(dataId, moveList[m]);
+                var prio   = method ? (METHOD_PRIORITY[method] || 0) : 0;
+                if (prio > bestPriority) { bestPriority = prio; bestMethod = method; }
+            }
+            if (bestMethod && MOVE_CLASS[bestMethod]) el.classList.add(MOVE_CLASS[bestMethod]);
         }
     }
 
-    /** Clear filter completely and reset input. */
+    /** Clear filter completely and reset input and category picker. */
     function clearMoveFilter() {
-        _activeMove = '';
+        _activeMove       = '';
+        _activeCategoryId = null;
         applyMoveFilter('');
-        var input   = document.getElementById('move-search-input');
+        var input    = document.getElementById('move-search-input');
         var clearBtn = document.getElementById('move-search-clear');
         if (input)    input.value = '';
         if (clearBtn) clearBtn.setAttribute('hidden', '');
         _hideDropdown();
+        // Reset category select
+        var catSel = document.getElementById('mc-filter-select');
+        if (catSel) catSel.value = '';
+    }
+
+    /**
+     * Re-populate the category <select> with current categories from MoveCategories.
+     * Called after the modal closes (save/delete) or on first inject.
+     */
+    function refreshCategoryPicker() {
+        var catSel = document.getElementById('mc-filter-select');
+        if (!catSel) return;
+        var prevVal = catSel.value;
+        // Keep only the placeholder option, repopulate
+        catSel.innerHTML = '<option value="">-- Category --</option>';
+        if (typeof window.MoveCategories === 'undefined') return;
+        var cats = window.MoveCategories.getAll();
+        for (var i = 0; i < cats.length; i++) {
+            var opt = document.createElement('option');
+            opt.value       = cats[i].id;
+            opt.textContent = cats[i].name + ' (' + cats[i].moves.length + ')';
+            catSel.appendChild(opt);
+        }
+        // Restore previous selection if it still exists
+        if (prevVal) catSel.value = prevVal;
+        // If the previously active category was deleted, clear filter
+        if (_activeCategoryId && catSel.value !== _activeCategoryId) {
+            _activeCategoryId = null;
+            applyMoveFilter('');
+        }
+    }
+
+    function _applyCategoryFilter(catId) {
+        _activeCategoryId = catId || null;
+        if (!_activeCategoryId) {
+            applyMoveFilter('');
+            return;
+        }
+        if (typeof window.MoveCategories === 'undefined') return;
+        var cat = window.MoveCategories.getById(_activeCategoryId);
+        if (!cat || !cat.moves.length) { applyMoveFilter(''); return; }
+        // Clear the single-move search so they don't conflict
+        _activeMove = '';
+        var input    = document.getElementById('move-search-input');
+        var clearBtn = document.getElementById('move-search-clear');
+        if (input)    input.value = '';
+        if (clearBtn) clearBtn.setAttribute('hidden', '');
+        _hideDropdown();
+        ensureLearnsets(function () { applyMoveFilter(cat.moves); });
     }
 
     // ── Autocomplete Dropdown ─────────────────────────────────────────────────
@@ -388,7 +457,11 @@
                 var el = document.getElementById(id);
                 if (!el) return;
                 new MutationObserver(function () {
-                    if (_activeMove) ensureLearnsets(function () { applyMoveFilter(_activeMove); });
+                    if (_activeMove) {
+                        ensureLearnsets(function () { applyMoveFilter(_activeMove); });
+                    } else if (_activeCategoryId) {
+                        _applyCategoryFilter(_activeCategoryId);
+                    }
                 }).observe(el, { childList: true });
             })(ids[t]);
         }
@@ -406,7 +479,7 @@
         container.innerHTML =
             '<div class="move-search-row">' +
               '<label class="move-search-label" for="move-search-input">' +
-                '<span aria-hidden="true">🔎</span> Move Filter' +
+                '<span aria-hidden="true">\uD83D\uDD0E</span> Move Filter' +
               '</label>' +
               '<div class="move-search-input-wrap">' +
                 '<input id="move-search-input" class="move-search-input" type="text"' +
@@ -419,6 +492,16 @@
             '</div>' +
             '<div id="move-search-dropdown" class="move-search-dropdown"' +
             '  role="listbox" aria-label="Move suggestions" hidden></div>' +
+            '<div id="mc-filter-row" class="move-search-row">' +
+              '<label id="mc-filter-label" class="move-search-label" for="mc-filter-select">' +
+                '&#127991; Category' +
+              '</label>' +
+              '<select id="mc-filter-select" aria-label="Filter box Pok\u00e9mon by move category">' +
+                '<option value="">-- Category --</option>' +
+              '</select>' +
+              '<button id="mc-filter-clear" type="button" title="Clear category filter"' +
+                ' aria-label="Clear category filter">\u2715</button>' +
+            '</div>' +
             '<div class="move-search-legend">' +
               '<span class="msleg msleg-known">&#9632; Knows</span>' +
               '<span class="msleg msleg-tutor">&#9632; Tutor</span>' +
@@ -428,6 +511,26 @@
 
         wrapper.parentNode.insertBefore(container, wrapper);
         _dropdownEl = document.getElementById('move-search-dropdown');
+
+        // Category select events
+        var catSel   = document.getElementById('mc-filter-select');
+        var catClear = document.getElementById('mc-filter-clear');
+        catSel.addEventListener('change', function () {
+            var val = catSel.value;
+            if (!val) {
+                _activeCategoryId = null;
+                applyMoveFilter('');
+            } else {
+                _applyCategoryFilter(val);
+            }
+        });
+        catClear.addEventListener('click', function () {
+            catSel.value = '';
+            _activeCategoryId = null;
+            applyMoveFilter('');
+        });
+        // Populate with any already-stored categories
+        refreshCategoryPicker();
 
         var input    = document.getElementById('move-search-input');
         var clearBtn = document.getElementById('move-search-clear');
@@ -502,10 +605,11 @@
 
     // ── Public API ────────────────────────────────────────────────────────────
     window.MoveSearch = {
-        getMoveLearnMethod: getMoveLearnMethod,
-        clearFilter:        clearMoveFilter,
-        applyFilter: function (name) { _selectMove(name); },
-        getLearnsets: function () { return LEARNSETS; }
+        getMoveLearnMethod:   getMoveLearnMethod,
+        clearFilter:          clearMoveFilter,
+        applyFilter:          function (name) { _selectMove(name); },
+        getLearnsets:         function () { return LEARNSETS; },
+        refreshCategoryPicker: refreshCategoryPicker
     };
 
 })();

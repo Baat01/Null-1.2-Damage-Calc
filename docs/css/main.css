@@ -2152,4 +2152,277 @@ select.status {
     user-select: none;
     font-size: 0.85em;
     padding: 0 1px;
-}
+}
+/* ========================================================================== */
+/* Move Categories Modal                                                        */
+/* ========================================================================== */
+
+/* ---- Overlay ------------------------------------------------------------- */
+#mc-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    box-sizing: border-box;
+}
+#mc-modal-overlay[hidden] { display: none !important; }
+
+/* ---- Dialog box ---------------------------------------------------------- */
+#mc-modal {
+    background: var(--bg-color, #fff);
+    color: inherit;
+    border: 1px solid var(--fieldset-color, #aaa);
+    border-radius: 8px;
+    box-shadow: 0 8px 32px rgba(0,0,0,.3);
+    width: min(780px, 96vw);
+    max-height: min(600px, 94vh);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* ---- Header -------------------------------------------------------------- */
+#mc-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px 10px;
+    border-bottom: 1px solid var(--fieldset-color, #ddd);
+    flex-shrink: 0;
+}
+#mc-modal-title {
+    margin: 0;
+    font-size: 1.1em;
+    font-weight: 700;
+}
+#mc-modal-close {
+    background: none;
+    border: none;
+    font-size: 1.1em;
+    cursor: pointer;
+    color: #888;
+    padding: 2px 6px;
+    border-radius: 4px;
+    line-height: 1;
+    transition: color 0.15s, background 0.15s;
+}
+#mc-modal-close:hover { color: #e44; background: rgba(220,53,69,.1); }
+
+/* ---- Body: two-column layout --------------------------------------------- */
+#mc-modal-body {
+    display: flex;
+    flex: 1 1 0;
+    overflow: hidden;
+}
+
+/* ---- Left: list panel ---------------------------------------------------- */
+#mc-list-panel {
+    width: 220px;
+    flex-shrink: 0;
+    border-right: 1px solid var(--fieldset-color, #ddd);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+#mc-list-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px 8px;
+    flex-shrink: 0;
+}
+.mc-list-title {
+    font-size: 0.82em;
+    font-weight: 600;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+#mc-category-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    overflow-y: auto;
+    flex: 1 1 0;
+}
+.mc-list-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--fieldset-color, #f0f0f0);
+    gap: 6px;
+    transition: background 0.1s;
+}
+.mc-list-item:hover { background: rgba(74,158,255,.12); }
+.mc-list-item-active { background: rgba(74,158,255,.22) !important; }
+.mc-list-item-name {
+    font-size: 0.9em;
+    font-weight: 600;
+    flex: 1 1 0;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.mc-list-item-count {
+    font-size: 0.78em;
+    color: #999;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* ---- Right: editor panel ------------------------------------------------- */
+#mc-editor-panel {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+#mc-editor-form,
+#mc-editor-placeholder {
+    flex: 1 1 0;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    gap: 6px;
+}
+.mc-empty-msg {
+    margin: auto;
+    text-align: center;
+    color: #999;
+    font-size: 0.88em;
+    line-height: 1.6;
+}
+
+/* ---- Form fields --------------------------------------------------------- */
+.mc-field-label {
+    font-size: 0.82em;
+    font-weight: 600;
+    color: #666;
+    margin-bottom: 2px;
+    display: block;
+}
+.mc-label-hint {
+    font-weight: 400;
+    color: #999;
+}
+.mc-text-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 5px 8px;
+    border: 1px solid var(--fieldset-color, #ccc);
+    border-radius: 4px;
+    font-size: 0.9em;
+    background: var(--bg-color, #fff);
+    color: inherit;
+}
+.mc-text-input:focus {
+    outline: 2px solid #4a9eff;
+    outline-offset: -1px;
+}
+.mc-textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 5px 8px;
+    border: 1px solid var(--fieldset-color, #ccc);
+    border-radius: 4px;
+    font-size: 0.86em;
+    font-family: inherit;
+    resize: vertical;
+    min-height: 100px;
+    background: var(--bg-color, #fff);
+    color: inherit;
+    flex: 1 1 auto;
+}
+.mc-textarea:focus {
+    outline: 2px solid #4a9eff;
+    outline-offset: -1px;
+}
+
+/* ---- Action buttons ------------------------------------------------------ */
+#mc-editor-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+.mc-btn {
+    padding: 5px 14px;
+    border: 1px solid var(--fieldset-color, #ccc);
+    border-radius: 4px;
+    font-size: 0.88em;
+    cursor: pointer;
+    background: var(--bg-color, #f5f5f5);
+    color: inherit;
+    transition: background 0.15s, border-color 0.15s;
+}
+.mc-btn:hover { background: rgba(0,0,0,.07); }
+.mc-btn-primary {
+    background: #4a9eff;
+    border-color: #2a7fe8;
+    color: #fff;
+}
+.mc-btn-primary:hover { background: #2a7fe8; }
+.mc-btn-danger {
+    background: #dc3545;
+    border-color: #b02232;
+    color: #fff;
+    margin-left: auto;
+}
+.mc-btn-danger:hover { background: #b02232; }
+
+/* ---- Error message ------------------------------------------------------- */
+.mc-error-msg {
+    color: #dc3545;
+    font-size: 0.82em;
+    margin: 0;
+}
+
+/* ---- Move Categories filter row in move-search-container ----------------- */
+#mc-filter-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: nowrap;
+    margin-top: 4px;
+}
+#mc-filter-label {
+    font-size: 0.85em;
+    white-space: nowrap;
+    flex-shrink: 0;
+    font-weight: 600;
+    cursor: default;
+    user-select: none;
+}
+#mc-filter-select {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 3px 6px;
+    border: 1px solid var(--fieldset-color, #888);
+    border-radius: 3px;
+    font-size: 0.88em;
+    background: var(--bg-color, #fff);
+    color: inherit;
+}
+#mc-filter-select:focus {
+    outline: 2px solid #4a9eff;
+    outline-offset: -1px;
+}
+#mc-filter-clear {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 0.85em;
+    color: #888;
+    padding: 0 2px;
+    line-height: 1;
+}
+#mc-filter-clear:hover { color: #e44; }

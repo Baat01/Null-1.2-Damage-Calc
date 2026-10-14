@@ -323,3 +323,45 @@ div.info-group.info-selectors.i-f-o-stats .info-selector-row select {
 .hp-fractions-container .hp-frac-sep {
     color: #555555;
 }
+
+/* ---- Move Categories Modal — dark theme overrides ----------------------- */
+#mc-modal {
+    background: var(--background, #222);
+    border-color: var(--border, #444);
+    color: var(--text, #eee);
+}
+#mc-modal-header {
+    border-color: var(--border, #444);
+}
+#mc-modal-close {
+    color: #aaa;
+}
+#mc-modal-close:hover {
+    color: #ff6b6b;
+    background: rgba(220,53,69,.15);
+}
+#mc-list-panel {
+    border-color: var(--border, #444);
+}
+.mc-list-item {
+    border-color: var(--border, #333);
+}
+.mc-list-item:hover { background: rgba(74,158,255,.15); }
+.mc-list-item-active { background: rgba(74,158,255,.28) !important; }
+.mc-text-input,
+.mc-textarea {
+    background: var(--background, #1e1e1e);
+    color: var(--text, #eee);
+    border-color: var(--border, #555);
+}
+.mc-btn {
+    background: var(--button, #333);
+    border-color: var(--border, #555);
+    color: var(--text, #eee);
+}
+.mc-btn:hover { background: var(--button-hover, #444); }
+#mc-filter-select {
+    background: var(--background, #2a2a2a);
+    color: var(--text, #eee);
+    border-color: var(--border, #555);
+}
