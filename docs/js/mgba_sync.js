@@ -62,16 +62,13 @@ function monToShowdownText(mon, { stripItems = false } = {}) {
     if (!species || species === "None" || species === "0" || species === 0) return null;
     if (mon.isEgg || mon.isBadEgg) return null;
 
-    // Header: "Nickname (Species) @ Item"  OR  "Species @ Item"
-    // When a nickname is present, addSets() will automatically promote it as the
-    // dropdown set-key (nameProp), overriding the fallback name argument.
-    let header = (mon.nickname && mon.nickname !== species)
-        ? `${mon.nickname} (${species})`
-        : species;
+    // Header: Always use the base species on the header line so Showdown uses setName
+    // instead of promoting an in-game nickname as the set key.
+    let header = species;
 
     if (!stripItems) {
         const item = mon.heldItem || mon.itemName || mon.heldItemName;
-        if (item && item !== "None" && item !== "0") header += ` @ ${item}`;
+        if (item && item !== "None" && item !== "0" && item !== "No Item") header += ` @ ${item}`;
     }
 
     let text = header + "\n";
@@ -151,9 +148,7 @@ function wipeOldMgbaSets() {
 /**
  * Parse the JSON payload from mGBA and import all Pokémon as custom sets.
  *
- * Set-key resolution (mirrors addSets() parser behaviour):
- *   • Nickname present → addSets() extracts it from the "Nickname (Species)" header → key = nickname.
- *   • No nickname      → key = setName (from .import-name-text, or "Custom Set").
+ * All imported Pokémon use the set name provided by .import-name-text (defaulting to "Custom Set").
  *
  * @param {object} data
  * @param {{ stripItems?: boolean }} opts
