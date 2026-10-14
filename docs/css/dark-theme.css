@@ -288,3 +288,24 @@ div.info-group.info-selectors.i-f-o-stats .info-selector-row select {
     border-color: black !important;
     color: var(--text);
 }
+
+/* ── Move Search — dark theme overrides ───────────────────────────────────── */
+#move-search-container {
+    border-color: var(--border, #444);
+    background: transparent;
+}
+.move-search-input {
+    background: var(--background, #2a2a2a);
+    color: var(--text, #eee);
+    border-color: var(--border, #555);
+}
+.move-search-dropdown {
+    background: var(--background, #2a2a2a);
+    border-color: var(--border, #555);
+    color: var(--text, #eee);
+}
+.move-search-dropdown-item:hover,
+.move-search-dropdown-item:focus {
+    background: #2d6fce;
+    color: #fff;
+}

@@ -1970,3 +1970,146 @@ select.status {
     right: 11.3em;
     margin: 0;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   Move Search / Learnset Filter — box Pokémon borders
+   Priority: move-filter classes always override speed-border classes
+   (move-filter is added AFTER mon-speed-* so it wins in cascade order)
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* 1. Knows the move (already in its 4-slot moveset) */
+.move-filter-known {
+    outline: 3px solid #28a745 !important;
+    outline-offset: -2px;
+    border-radius: 6px;
+}
+
+/* 2. Can learn via Move Tutor */
+.move-filter-tutor {
+    outline: 3px solid #ffc107 !important;
+    outline-offset: -2px;
+    border-radius: 6px;
+}
+
+/* 3. Can learn via TM / Machine */
+.move-filter-tm {
+    outline: 3px solid #fd7e14 !important;
+    outline-offset: -2px;
+    border-radius: 6px;
+}
+
+/* 4. Can relearn via Heart Scale / level-up at or below current level */
+.move-filter-scale {
+    outline: 3px solid #dc3545 !important;
+    outline-offset: -2px;
+    border-radius: 6px;
+}
+
+/* ── Move Search UI ─────────────────────────────────────────────────────────── */
+
+#move-search-container {
+    margin-bottom: 10px;
+    padding: 8px 6px 6px;
+    border: 1px solid var(--fieldset-color, #555);
+    border-radius: 4px;
+    position: relative;
+}
+
+.move-search-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: nowrap;
+}
+
+.move-search-label {
+    font-size: 0.85em;
+    white-space: nowrap;
+    flex-shrink: 0;
+    font-weight: 600;
+    cursor: default;
+    user-select: none;
+}
+
+.move-search-input-wrap {
+    position: relative;
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+.move-search-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 3px 24px 3px 6px;
+    border: 1px solid var(--fieldset-color, #888);
+    border-radius: 3px;
+    font-size: 0.9em;
+    background: var(--bg-color, #fff);
+    color: inherit;
+}
+
+.move-search-input:focus {
+    outline: 2px solid #4a9eff;
+    outline-offset: -1px;
+}
+
+.move-search-clear {
+    position: absolute;
+    right: 3px;
+    top: 50%;
+    transform: translateY(-50%);
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 0.85em;
+    color: #888;
+    padding: 0 2px;
+    line-height: 1;
+}
+.move-search-clear:hover { color: #e44; }
+
+/* Autocomplete dropdown */
+.move-search-dropdown {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: calc(100% + 2px);
+    background: var(--bg-color, #fff);
+    border: 1px solid var(--fieldset-color, #888);
+    border-radius: 3px;
+    z-index: 9999;
+    max-height: 220px;
+    overflow-y: auto;
+    box-shadow: 0 4px 12px rgba(0,0,0,.25);
+}
+
+.move-search-dropdown-item {
+    padding: 4px 8px;
+    cursor: pointer;
+    font-size: 0.88em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.move-search-dropdown-item:hover,
+.move-search-dropdown-item:focus {
+    background: #4a9eff;
+    color: #fff;
+    outline: none;
+}
+
+/* Colour-coded legend */
+.move-search-legend {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 5px;
+    font-size: 0.78em;
+}
+
+.msleg { white-space: nowrap; }
+.msleg-known { color: #28a745; }
+.msleg-tutor { color: #ffc107; }
+.msleg-tm    { color: #fd7e14; }
+.msleg-scale { color: #dc3545; }
