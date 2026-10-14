@@ -1,4 +1,4 @@
-﻿/**
+/**
  * move_categories.js — Custom Move Categories (Move Tags / Bundles)
  *
  * Allows users to create, edit, and delete named groups of moves (e.g.
@@ -96,17 +96,15 @@
         _modalEl.innerHTML =
             '<div id="mc-modal" role="document">' +
               '<div id="mc-modal-header">' +
-                '<h2 id="mc-modal-title">&#127991; Move Categories</h2>' +
+                '<h2 id="mc-modal-title">Move Categories</h2>' +
                 '<button type="button" id="mc-modal-close" aria-label="Close">&#x2715;</button>' +
               '</div>' +
               '<div id="mc-modal-body">' +
-                '<div id="mc-list-panel">' +
-                  '<div id="mc-list-header">' +
-                    '<span class="mc-list-title">Your categories</span>' +
-                    '<button type="button" id="mc-new-btn" class="mc-btn mc-btn-primary">+ New</button>' +
+                '<div id="mc-list-panel" class="mc-list-panel">' +
+                  '<div class="mc-sidebar-header">' +
+                    '<button type="button" id="mc-btn-new" class="btn btn-primary mc-btn-new">+ New Category</button>' +
                   '</div>' +
-                  '<ul id="mc-category-list" role="listbox" aria-label="Move categories"></ul>' +
-                  '<p id="mc-list-empty" class="mc-empty-msg">No categories yet.<br>Click <strong>+ New</strong> to create one.</p>' +
+                  '<div id="mc-category-list" class="mc-category-list" role="listbox" aria-label="Move categories"></div>' +
                 '</div>' +
                 '<div id="mc-editor-panel">' +
                   '<p id="mc-editor-placeholder" class="mc-empty-msg">Select a category to edit,<br>or create a new one.</p>' +
@@ -129,7 +127,8 @@
         document.body.appendChild(_modalEl);
 
         document.getElementById('mc-modal-close').addEventListener('click', _closeModal);
-        document.getElementById('mc-new-btn').addEventListener('click',     _onNewClick);
+        var newBtn = document.getElementById('mc-btn-new');
+        if (newBtn) newBtn.addEventListener('click', _onNewClick);
         document.getElementById('mc-save-btn').addEventListener('click',    _onSaveClick);
         document.getElementById('mc-cancel-btn').addEventListener('click',  _onCancelClick);
         document.getElementById('mc-delete-btn').addEventListener('click',  _onDeleteClick);
@@ -173,15 +172,17 @@
     // ---- List ---------------------------------------------------------------
 
     function _renderList() {
-        var list  = document.getElementById('mc-category-list');
-        var empty = document.getElementById('mc-list-empty');
+        var list = document.getElementById('mc-category-list');
         if (!list) return;
         list.innerHTML = '';
         if (!_categories.length) {
-            if (empty) empty.removeAttribute('hidden');
+            var empty = document.createElement('p');
+            empty.id = 'mc-list-empty';
+            empty.className = 'mc-empty-msg';
+            empty.innerHTML = 'No categories yet.<br>Click <strong>+ New Category</strong> to create one.';
+            list.appendChild(empty);
             return;
         }
-        if (empty) empty.setAttribute('hidden', '');
 
         for (var i = 0; i < _categories.length; i++) {
             (function (cat) {
@@ -298,18 +299,19 @@
     // ---- Nav button ---------------------------------------------------------
 
     function _injectNavButton() {
-        if (document.getElementById('header-categories-button')) return;
-        var tabGroup = document.querySelector('.app-header-tabs');
-        if (!tabGroup) return;
-
-        var btn = document.createElement('button');
-        btn.type      = 'button';
-        btn.className = 'btn btn-small app-header-tab';
-        btn.id        = 'header-categories-button';
+        var btn = document.getElementById('header-categories-button');
+        if (!btn) {
+            var tabGroup = document.querySelector('.app-header-tabs');
+            if (!tabGroup) return;
+            btn = document.createElement('button');
+            btn.type      = 'button';
+            btn.className = 'btn btn-small app-header-tab';
+            btn.id        = 'header-categories-button';
+            tabGroup.appendChild(btn);
+        }
         btn.title     = 'Manage custom move categories';
-        btn.innerHTML = '&#127991; Move Categories';
-        btn.addEventListener('click', _openModal);
-        tabGroup.appendChild(btn);
+        btn.innerHTML = 'Move<br>Categories';
+        btn.onclick   = _openModal;
     }
 
     // ---- Init ---------------------------------------------------------------

@@ -329,6 +329,7 @@
     }
 
     /** Clear filter completely and reset input and category picker. */
+    /** Clear filter completely and reset input. */
     function clearMoveFilter() {
         _activeMove       = '';
         _activeCategoryId = null;
@@ -338,77 +339,178 @@
         if (input)    input.value = '';
         if (clearBtn) clearBtn.setAttribute('hidden', '');
         _hideDropdown();
-        // Reset category select
-        var catSel = document.getElementById('mc-filter-select');
-        if (catSel) catSel.value = '';
+    }
+
+    function _getAllCategories() {
+        if (typeof window.MoveCategories !== 'undefined' &&
+            typeof window.MoveCategories.getAll === 'function') {
+            return window.MoveCategories.getAll() || [];
+        }
+        return [];
     }
 
     /**
-     * Re-populate the category <select> with current categories from MoveCategories.
-     * Called after the modal closes (save/delete) or on first inject.
+     * Resolve an input string to either:
+     *   { type: 'category', category: catObj }
+     *   { type: 'move', moveName: string }
+     *   null
      */
-    function refreshCategoryPicker() {
-        var catSel = document.getElementById('mc-filter-select');
-        if (!catSel) return;
-        var prevVal = catSel.value;
-        // Keep only the placeholder option, repopulate
-        catSel.innerHTML = '<option value="">-- Category --</option>';
-        if (typeof window.MoveCategories === 'undefined') return;
-        var cats = window.MoveCategories.getAll();
-        for (var i = 0; i < cats.length; i++) {
-            var opt = document.createElement('option');
-            opt.value       = cats[i].id;
-            opt.textContent = cats[i].name + ' (' + cats[i].moves.length + ')';
-            catSel.appendChild(opt);
+    function _resolveFilter(text) {
+        var raw = (text || '').trim();
+        if (!raw) return null;
+
+        var cats = _getAllCategories();
+
+        // 1. Explicit [Category] prefix
+        var lower = raw.toLowerCase();
+        var prefix = '[category]';
+        if (lower.indexOf(prefix) === 0) {
+            var catName = raw.slice(prefix.length).trim().toLowerCase();
+            for (var i = 0; i < cats.length; i++) {
+                if (cats[i].name.toLowerCase() === catName) {
+                    return { type: 'category', category: cats[i] };
+                }
+            }
+            for (var j = 0; j < cats.length; j++) {
+                if (cats[j].name.toLowerCase().indexOf(catName) === 0) {
+                    return { type: 'category', category: cats[j] };
+                }
+            }
+            return null;
         }
-        // Restore previous selection if it still exists
-        if (prevVal) catSel.value = prevVal;
-        // If the previously active category was deleted, clear filter
-        if (_activeCategoryId && catSel.value !== _activeCategoryId) {
-            _activeCategoryId = null;
-            applyMoveFilter('');
+
+        // 2. Exact match to a registered category name (case-insensitive)
+        for (var k = 0; k < cats.length; k++) {
+            if (cats[k].name.toLowerCase() === lower) {
+                return { type: 'category', category: cats[k] };
+            }
+        }
+
+        // 3. Match against canonical move names
+        var key = normaliseMoveKey(raw);
+        if (key) {
+            for (var m = 0; m < _allMoveNames.length; m++) {
+                if (normaliseMoveKey(_allMoveNames[m]) === key) {
+                    return { type: 'move', moveName: _allMoveNames[m] };
+                }
+            }
+        }
+
+        return null;
+    }
+
+    function _selectCategory(cat) {
+        var input    = document.getElementById('move-search-input');
+        var clearBtn = document.getElementById('move-search-clear');
+        if (input)    input.value = '[Category] ' + cat.name;
+        if (clearBtn) clearBtn.removeAttribute('hidden');
+        _activeMove       = '';
+        _activeCategoryId = cat.id;
+        _hideDropdown();
+        ensureLearnsets(function () { applyMoveFilter(cat.moves); });
+    }
+
+    function _selectMove(name) {
+        var input    = document.getElementById('move-search-input');
+        var clearBtn = document.getElementById('move-search-clear');
+        if (input)    input.value = name;
+        if (clearBtn) clearBtn.removeAttribute('hidden');
+        _activeMove       = name;
+        _activeCategoryId = null;
+        _hideDropdown();
+        ensureLearnsets(function () { applyMoveFilter(name); });
+    }
+
+    function _selectItem(item) {
+        if (!item) return;
+        if (item.type === 'category') {
+            _selectCategory(item.category);
+        } else if (item.type === 'move') {
+            _selectMove(item.name);
         }
     }
 
-    function _applyCategoryFilter(catId) {
-        _activeCategoryId = catId || null;
-        if (!_activeCategoryId) {
-            applyMoveFilter('');
-            return;
+    /**
+     * Synchronise active category filter when categories are modified/deleted in modal.
+     */
+    function refreshCategoryPicker() {
+        if (_activeCategoryId) {
+            var cats = _getAllCategories();
+            var active = null;
+            for (var i = 0; i < cats.length; i++) {
+                if (cats[i].id === _activeCategoryId) { active = cats[i]; break; }
+            }
+            if (!active) {
+                clearMoveFilter();
+            } else {
+                var input = document.getElementById('move-search-input');
+                if (input) input.value = '[Category] ' + active.name;
+                ensureLearnsets(function () { applyMoveFilter(active.moves); });
+            }
         }
-        if (typeof window.MoveCategories === 'undefined') return;
-        var cat = window.MoveCategories.getById(_activeCategoryId);
-        if (!cat || !cat.moves.length) { applyMoveFilter(''); return; }
-        // Clear the single-move search so they don't conflict
-        _activeMove = '';
-        var input    = document.getElementById('move-search-input');
-        var clearBtn = document.getElementById('move-search-clear');
-        if (input)    input.value = '';
-        if (clearBtn) clearBtn.setAttribute('hidden', '');
-        _hideDropdown();
-        ensureLearnsets(function () { applyMoveFilter(cat.moves); });
     }
 
     // ── Autocomplete Dropdown ─────────────────────────────────────────────────
 
     var _dropdownEl = null;
 
+    function _getSuggestions(raw) {
+        var query = (raw || '').trim();
+        if (!query) return [];
+
+        var lower = query.toLowerCase();
+        var isCatQuery = lower.indexOf('[category]') === 0;
+        var catSearch = isCatQuery ? lower.slice(10).trim() : lower;
+
+        var cats = _getAllCategories();
+        var catMatches = [];
+        for (var i = 0; i < cats.length; i++) {
+            var cName = cats[i].name;
+            var cLower = cName.toLowerCase();
+            if (!catSearch || cLower.indexOf(catSearch) !== -1 || ('[category] ' + cLower).indexOf(lower) !== -1) {
+                catMatches.push({
+                    type: 'category',
+                    category: cats[i],
+                    label: '[Category] ' + cName
+                });
+            }
+        }
+
+        var moveMatches = [];
+        if (!isCatQuery) {
+            for (var j = 0; j < _allMoveNames.length; j++) {
+                if (_allMoveNames[j].toLowerCase().indexOf(lower) !== -1) {
+                    moveMatches.push({
+                        type: 'move',
+                        name: _allMoveNames[j],
+                        label: _allMoveNames[j]
+                    });
+                }
+            }
+        }
+
+        return catMatches.concat(moveMatches);
+    }
+
     function _showDropdown(matches) {
         if (!_dropdownEl) return;
         _dropdownEl.innerHTML = '';
-        if (!matches.length) { _hideDropdown(); return; }
-        var limit = Math.min(matches.length, 12);
+        if (!matches || !matches.length) { _hideDropdown(); return; }
+
+        var limit = Math.min(matches.length, 14);
         for (var i = 0; i < limit; i++) {
+            var match = matches[i];
             var item = document.createElement('div');
-            item.className = 'move-search-dropdown-item';
+            item.className = 'move-search-dropdown-item' + (match.type === 'category' ? ' is-category' : '');
             item.setAttribute('role', 'option');
-            item.textContent = matches[i];
-            (function (name) {
+            item.tabIndex = -1;
+            item.textContent = match.label;
+            (function (m) {
                 item.addEventListener('mousedown', function (e) {
                     e.preventDefault();
-                    _selectMove(name);
+                    _selectItem(m);
                 });
-            })(matches[i]);
+            })(match);
             _dropdownEl.appendChild(item);
         }
         _dropdownEl.removeAttribute('hidden');
@@ -418,31 +520,24 @@
         if (_dropdownEl) _dropdownEl.setAttribute('hidden', '');
     }
 
-    function _selectMove(name) {
-        var input    = document.getElementById('move-search-input');
-        var clearBtn = document.getElementById('move-search-clear');
-        if (input)    input.value = name;
-        if (clearBtn) clearBtn.removeAttribute('hidden');
-        _activeMove = name;
-        _hideDropdown();
-        ensureLearnsets(function () { applyMoveFilter(name); });
-    }
-
     function _onInputChange(e) {
         var val = (e.target.value || '').trim();
         if (!val) { clearMoveFilter(); return; }
 
-        var lower   = val.toLowerCase();
-        var matches = _allMoveNames.filter(function (n) { return n.toLowerCase().indexOf(lower) !== -1; });
+        var matches = _getSuggestions(val);
         _showDropdown(matches);
 
-        // Exact match → apply immediately
-        var searchKey = normaliseMoveKey(val);
-        for (var i = 0; i < _allMoveNames.length; i++) {
-            if (normaliseMoveKey(_allMoveNames[i]) === searchKey) {
-                _activeMove = _allMoveNames[i];
+        // Immediate resolution if user typed exact move or category name
+        var resolved = _resolveFilter(val);
+        if (resolved) {
+            if (resolved.type === 'category') {
+                _activeCategoryId = resolved.category.id;
+                _activeMove       = '';
+                ensureLearnsets(function () { applyMoveFilter(resolved.category.moves); });
+            } else if (resolved.type === 'move') {
+                _activeCategoryId = null;
+                _activeMove       = resolved.moveName;
                 ensureLearnsets(function () { applyMoveFilter(_activeMove); });
-                break;
             }
         }
     }
@@ -457,10 +552,16 @@
                 var el = document.getElementById(id);
                 if (!el) return;
                 new MutationObserver(function () {
-                    if (_activeMove) {
+                    if (_activeCategoryId) {
+                        var cats = _getAllCategories();
+                        for (var i = 0; i < cats.length; i++) {
+                            if (cats[i].id === _activeCategoryId) {
+                                ensureLearnsets(function () { applyMoveFilter(cats[i].moves); });
+                                return;
+                            }
+                        }
+                    } else if (_activeMove) {
                         ensureLearnsets(function () { applyMoveFilter(_activeMove); });
-                    } else if (_activeCategoryId) {
-                        _applyCategoryFilter(_activeCategoryId);
                     }
                 }).observe(el, { childList: true });
             })(ids[t]);
@@ -478,30 +579,18 @@
 
         container.innerHTML =
             '<div class="move-search-row">' +
-              '<label class="move-search-label" for="move-search-input">' +
-                '<span aria-hidden="true">\uD83D\uDD0E</span> Move Filter' +
-              '</label>' +
+              '<label class="move-search-label" for="move-search-input">Move Filter</label>' +
               '<div class="move-search-input-wrap">' +
                 '<input id="move-search-input" class="move-search-input" type="text"' +
-                '  autocomplete="off" spellcheck="false" placeholder="Search a move\u2026"' +
-                '  aria-label="Filter box Pok\u00e9mon by move" aria-autocomplete="list"' +
+                '  autocomplete="off" spellcheck="false" placeholder="Search a move or category\u2026"' +
+                '  aria-label="Filter box Pok\u00e9mon by move or category" aria-autocomplete="list"' +
                 '  aria-controls="move-search-dropdown" />' +
                 '<button id="move-search-clear" class="move-search-clear" type="button"' +
                 '  title="Clear move filter" aria-label="Clear move filter" hidden>\u2715</button>' +
               '</div>' +
             '</div>' +
             '<div id="move-search-dropdown" class="move-search-dropdown"' +
-            '  role="listbox" aria-label="Move suggestions" hidden></div>' +
-            '<div id="mc-filter-row" class="move-search-row">' +
-              '<label id="mc-filter-label" class="move-search-label" for="mc-filter-select">' +
-                '&#127991; Category' +
-              '</label>' +
-              '<select id="mc-filter-select" aria-label="Filter box Pok\u00e9mon by move category">' +
-                '<option value="">-- Category --</option>' +
-              '</select>' +
-              '<button id="mc-filter-clear" type="button" title="Clear category filter"' +
-                ' aria-label="Clear category filter">\u2715</button>' +
-            '</div>' +
+            '  role="listbox" aria-label="Move and category suggestions" hidden></div>' +
             '<div class="move-search-legend">' +
               '<span class="msleg msleg-known">&#9632; Knows</span>' +
               '<span class="msleg msleg-tutor">&#9632; Tutor</span>' +
@@ -511,26 +600,6 @@
 
         wrapper.parentNode.insertBefore(container, wrapper);
         _dropdownEl = document.getElementById('move-search-dropdown');
-
-        // Category select events
-        var catSel   = document.getElementById('mc-filter-select');
-        var catClear = document.getElementById('mc-filter-clear');
-        catSel.addEventListener('change', function () {
-            var val = catSel.value;
-            if (!val) {
-                _activeCategoryId = null;
-                applyMoveFilter('');
-            } else {
-                _applyCategoryFilter(val);
-            }
-        });
-        catClear.addEventListener('click', function () {
-            catSel.value = '';
-            _activeCategoryId = null;
-            applyMoveFilter('');
-        });
-        // Populate with any already-stored categories
-        refreshCategoryPicker();
 
         var input    = document.getElementById('move-search-input');
         var clearBtn = document.getElementById('move-search-clear');
@@ -553,12 +622,28 @@
                 clearMoveFilter();
             } else if (e.key === 'Enter') {
                 var first = _dropdownEl && _dropdownEl.querySelector('.move-search-dropdown-item');
-                if (first) { _selectMove(first.textContent); }
+                if (first && !_dropdownEl.hasAttribute('hidden')) {
+                    var resolvedFirst = _resolveFilter(first.textContent);
+                    if (resolvedFirst) {
+                        if (resolvedFirst.type === 'category') _selectCategory(resolvedFirst.category);
+                        else _selectMove(resolvedFirst.moveName);
+                    }
+                } else {
+                    var val = (input.value || '').trim();
+                    var resolved = _resolveFilter(val);
+                    if (resolved) {
+                        if (resolved.type === 'category') _selectCategory(resolved.category);
+                        else _selectMove(resolved.moveName);
+                    }
+                }
                 _hideDropdown();
                 e.preventDefault();
             } else if (e.key === 'ArrowDown') {
                 var firstItem = _dropdownEl && _dropdownEl.querySelector('.move-search-dropdown-item');
-                if (firstItem) { firstItem.focus(); e.preventDefault(); }
+                if (firstItem && !_dropdownEl.hasAttribute('hidden')) {
+                    firstItem.focus();
+                    e.preventDefault();
+                }
             }
         });
 
@@ -581,7 +666,11 @@
                 if (prev) { prev.focus(); e.preventDefault(); }
                 else { input.focus(); e.preventDefault(); }
             } else if (e.key === 'Enter') {
-                _selectMove(focused.textContent);
+                var resolved = _resolveFilter(focused.textContent);
+                if (resolved) {
+                    if (resolved.type === 'category') _selectCategory(resolved.category);
+                    else _selectMove(resolved.moveName);
+                }
                 e.preventDefault();
             } else if (e.key === 'Escape') {
                 clearMoveFilter();
