@@ -47,6 +47,16 @@
                 }
             }
             document.documentElement.setAttribute('data-theme', theme);
+            try {
+                var rawSettings = localStorage.getItem('nullCalcSettings');
+                if (rawSettings) {
+                    var s = JSON.parse(rawSettings);
+                    var doc = document.documentElement;
+                    if (s.showMoveFilter === false) doc.classList.add('hide-feature-move-filter');
+                    if (s.showMgbaSync === false) doc.classList.add('hide-feature-mgba-sync');
+                    if (s.showHpFractions === false) doc.classList.add('hide-feature-hp-fractions');
+                }
+            } catch (e) {}
         })();
     </script>
 </head>
@@ -112,6 +122,28 @@
                 <span class="app-menu-row-label">Always Put Megas in Box 2</span>
                 <span class="app-menu-toggle">
                     <input type="checkbox" id="megas-box2-toggle" class="app-menu-toggle-input" role="switch" checked />
+                    <span class="app-menu-toggle-track" aria-hidden="true"></span>
+                </span>
+            </label>
+            <div class="app-menu-section-header">Null Features / Affichage</div>
+            <label class="app-menu-row app-menu-toggle-row">
+                <span class="app-menu-row-label">Move Filter</span>
+                <span class="app-menu-toggle">
+                    <input type="checkbox" id="setting-toggle-move-filter" class="app-menu-toggle-input" role="switch" checked />
+                    <span class="app-menu-toggle-track" aria-hidden="true"></span>
+                </span>
+            </label>
+            <label class="app-menu-row app-menu-toggle-row">
+                <span class="app-menu-row-label">mGBA Sync Toolbar</span>
+                <span class="app-menu-toggle">
+                    <input type="checkbox" id="setting-toggle-mgba-sync" class="app-menu-toggle-input" role="switch" checked />
+                    <span class="app-menu-toggle-track" aria-hidden="true"></span>
+                </span>
+            </label>
+            <label class="app-menu-row app-menu-toggle-row">
+                <span class="app-menu-row-label">HP Threshold Fractions</span>
+                <span class="app-menu-toggle">
+                    <input type="checkbox" id="setting-toggle-hp-fractions" class="app-menu-toggle-input" role="switch" checked />
                     <span class="app-menu-toggle-track" aria-hidden="true"></span>
                 </span>
             </label>

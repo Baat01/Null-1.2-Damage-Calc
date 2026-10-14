@@ -3924,6 +3924,9 @@ $(document).ready(function () {
 			}
 		});
 	}
+	// Feature visibility toggles (Move Filter, mGBA Sync, HP Fractions)
+	initFeatureVisibilitySettings();
+
 	//select last trainer (after icon size so --box-icon-size matches buttons)
 	var last = localStorage.getItem("lasttimetrainer");
 	if (last != null && last !== "") {
@@ -3932,6 +3935,98 @@ $(document).ready(function () {
 	}
 	lastOpposingTrainerPersistEnabled = true;
 });
+
+// ─── Feature Visibility Settings (Move Filter, mGBA Sync, HP Fractions) ───────
+var NULL_CALC_SETTINGS_KEY = "nullCalcSettings";
+
+function getNullCalcSettings() {
+	try {
+		var raw = localStorage.getItem(NULL_CALC_SETTINGS_KEY);
+		if (raw) {
+			var parsed = JSON.parse(raw);
+			return {
+				showMoveFilter: parsed.showMoveFilter !== false,
+				showMgbaSync: parsed.showMgbaSync !== false,
+				showHpFractions: parsed.showHpFractions !== false
+			};
+		}
+	} catch (e) {}
+	return {
+		showMoveFilter: true,
+		showMgbaSync: true,
+		showHpFractions: true
+	};
+}
+
+function saveNullCalcSettings(settings) {
+	try {
+		localStorage.setItem(NULL_CALC_SETTINGS_KEY, JSON.stringify(settings));
+	} catch (e) {}
+}
+
+function applyFeatureVisibility(feature, isVisible) {
+	var doc = document.documentElement;
+	if (feature === "showMoveFilter") {
+		doc.classList.toggle("hide-feature-move-filter", !isVisible);
+		var moveSearchEl = document.getElementById("move-search-container");
+		if (moveSearchEl) moveSearchEl.classList.toggle("hidden-by-setting", !isVisible);
+		if (!isVisible && window.MoveSearch && typeof window.MoveSearch.clearFilter === "function") {
+			window.MoveSearch.clearFilter();
+		}
+	} else if (feature === "showMgbaSync") {
+		doc.classList.toggle("hide-feature-mgba-sync", !isVisible);
+		var syncEls = document.querySelectorAll("#mgba-sync-container, .mgba-sync-container");
+		for (var i = 0; i < syncEls.length; i++) {
+			syncEls[i].classList.toggle("hidden-by-setting", !isVisible);
+		}
+	} else if (feature === "showHpFractions") {
+		doc.classList.toggle("hide-feature-hp-fractions", !isVisible);
+		var fracEls = document.querySelectorAll(".hp-fractions-container");
+		for (var j = 0; j < fracEls.length; j++) {
+			fracEls[j].classList.toggle("hidden-by-setting", !isVisible);
+		}
+	}
+}
+
+function initFeatureVisibilitySettings() {
+	var settings = getNullCalcSettings();
+
+	var moveFilterCb = document.getElementById("setting-toggle-move-filter");
+	var mgbaSyncCb   = document.getElementById("setting-toggle-mgba-sync");
+	var hpFracCb     = document.getElementById("setting-toggle-hp-fractions");
+
+	applyFeatureVisibility("showMoveFilter", settings.showMoveFilter);
+	applyFeatureVisibility("showMgbaSync", settings.showMgbaSync);
+	applyFeatureVisibility("showHpFractions", settings.showHpFractions);
+
+	if (moveFilterCb) {
+		moveFilterCb.checked = settings.showMoveFilter;
+		moveFilterCb.addEventListener("change", function () {
+			settings.showMoveFilter = moveFilterCb.checked;
+			saveNullCalcSettings(settings);
+			applyFeatureVisibility("showMoveFilter", settings.showMoveFilter);
+		});
+	}
+
+	if (mgbaSyncCb) {
+		mgbaSyncCb.checked = settings.showMgbaSync;
+		mgbaSyncCb.addEventListener("change", function () {
+			settings.showMgbaSync = mgbaSyncCb.checked;
+			saveNullCalcSettings(settings);
+			applyFeatureVisibility("showMgbaSync", settings.showMgbaSync);
+		});
+	}
+
+	if (hpFracCb) {
+		hpFracCb.checked = settings.showHpFractions;
+		hpFracCb.addEventListener("change", function () {
+			settings.showHpFractions = hpFracCb.checked;
+			saveNullCalcSettings(settings);
+			applyFeatureVisibility("showHpFractions", settings.showHpFractions);
+		});
+	}
+}
+window.initFeatureVisibilitySettings = initFeatureVisibilitySettings;
 
 /* Click-to-copy function */
 $("#mainResult").click(function () {

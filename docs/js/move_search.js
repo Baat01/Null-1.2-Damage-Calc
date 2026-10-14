@@ -342,9 +342,13 @@
     }
 
     function _getAllCategories() {
-        if (typeof window.MoveCategories !== 'undefined' &&
-            typeof window.MoveCategories.getAll === 'function') {
-            return window.MoveCategories.getAll() || [];
+        if (typeof window.MoveCategories !== 'undefined') {
+            if (typeof window.MoveCategories.getAllCategories === 'function') {
+                return window.MoveCategories.getAllCategories() || [];
+            }
+            if (typeof window.MoveCategories.getAll === 'function') {
+                return window.MoveCategories.getAll() || [];
+            }
         }
         return [];
     }

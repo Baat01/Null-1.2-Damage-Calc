@@ -384,3 +384,22 @@ div.info-group.info-selectors.i-f-o-stats .info-selector-row select {
 .move-search-dropdown-item.is-category:focus {
     background-color: rgba(100, 181, 246, 0.22);
 }
+
+.mc-badge-default {
+    background: rgba(100, 181, 246, 0.18);
+    color: #90caf9;
+    border-color: rgba(144, 202, 249, 0.35);
+}
+.mc-badge-modified {
+    background: rgba(255, 183, 77, 0.18);
+    color: #ffb74d;
+    border-color: rgba(255, 183, 77, 0.35);
+}
+.mc-btn-warning {
+    background: #b45309;
+    border-color: #d97706;
+    color: #fff;
+}
+.mc-btn-warning:hover {
+    background: #92400e;
+}

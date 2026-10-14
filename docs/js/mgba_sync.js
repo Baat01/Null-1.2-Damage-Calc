@@ -393,6 +393,7 @@ function injectUI() {
 
     const syncBox = document.createElement("div");
     syncBox.className = "mgba-sync-container";
+    syncBox.id = "mgba-sync-container";
     syncBox.style.cssText = [
         "margin-bottom:15px",
         "padding:10px",
