@@ -309,3 +309,17 @@ div.info-group.info-selectors.i-f-o-stats .info-selector-row select {
     background: #2d6fce;
     color: #fff;
 }
+
+/* ── HP Threshold Fractions — dark theme overrides ────────────────────────── */
+.hp-fractions-container {
+    color: #9aa0a6;
+}
+.hp-fractions-container .hp-frac-label {
+    color: #8ab4f8;
+}
+.hp-fractions-container .hp-frac-val {
+    color: #e8eaed;
+}
+.hp-fractions-container .hp-frac-sep {
+    color: #555555;
+}

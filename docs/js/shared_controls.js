@@ -2385,6 +2385,40 @@ function createField() {
 	});
 }
 
+function updateHpFractionsFromMaxHp(maxHp, container) {
+	var $container = $(container);
+	if (!$container.hasClass("hp-fractions-container")) {
+		$container = $container.find(".hp-fractions-container");
+	}
+	if (!$container.length) return;
+
+	var num = Number(maxHp);
+	if (isNaN(num) || num <= 0) {
+		$container.find(".hp-frac-val").text("0");
+		return;
+	}
+
+	$container.find(".hp-frac-16").text(Math.floor(num / 16));
+	$container.find(".hp-frac-10").text(Math.floor(num / 10));
+	$container.find(".hp-frac-8").text(Math.floor(num / 8));
+	$container.find(".hp-frac-6").text(Math.floor(num / 6));
+	$container.find(".hp-frac-4").text(Math.floor(num / 4));
+	$container.find(".hp-frac-3").text(Math.floor(num / 3));
+	$container.find(".hp-frac-2").text(Math.floor(num / 2));
+}
+
+function updateHpFractions(poke, maxHp) {
+	if (!poke) return;
+	var $poke = $(poke);
+	if (typeof maxHp === "undefined" || maxHp === null) {
+		maxHp = Number($poke.find(".max-hp").first().text()) || 0;
+	}
+	updateHpFractionsFromMaxHp(maxHp, $poke);
+}
+
+window.updateHpFractions = updateHpFractions;
+window.updateHpFractionsFromMaxHp = updateHpFractionsFromMaxHp;
+
 function calcHP(poke) {
 	var total = calcStat(poke, "hp");
 	var $maxHP = poke.find(".max-hp");
@@ -2402,6 +2436,7 @@ function calcHP(poke) {
 	calcPercentHP(poke, total, newCurrentHP);
 
 	$currentHP.attr('data-set', true);
+	updateHpFractions(poke, total);
 }
 
 function calcStat(poke, StatID) {
@@ -3736,6 +3771,7 @@ $(document).ready(function () {
 	$(".set-selector").change();
 	$("#p1, #p2").each(function () {
 		updateTraceCopyVisibility($(this));
+		updateHpFractions($(this));
 	});
 	$(".terrain-trigger").bind("change keyup", getTerrainEffects);
 	$("#previous-trainer").click(previousTrainer);

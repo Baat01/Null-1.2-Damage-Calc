@@ -2112,4 +2112,44 @@ select.status {
 .msleg-known { color: #28a745; }
 .msleg-tutor { color: #ffc107; }
 .msleg-tm    { color: #fd7e14; }
-.msleg-scale { color: #dc3545; }
+.msleg-scale { color: #dc3545; }
+
+/* ── HP Threshold Fractions Display ───────────────────────────────────────── */
+.hp-fractions-container {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 2px 5px;
+    font-size: 0.82em;
+    color: #666;
+    margin: 3px 0 5px 0;
+    line-height: 1.25;
+    user-select: none;
+}
+.hp-fractions-container span,
+.hp-fractions-container .hp-frac-item,
+.hp-fractions-container .hp-frac-label,
+.hp-fractions-container .hp-frac-val,
+.hp-fractions-container .hp-frac-sep {
+    width: auto !important;
+}
+.hp-fractions-container .hp-frac-item {
+    display: inline-flex !important;
+    align-items: center;
+    white-space: nowrap;
+    cursor: help;
+}
+.hp-fractions-container .hp-frac-label {
+    color: #555;
+    margin-right: 2px;
+}
+.hp-fractions-container .hp-frac-val {
+    font-weight: 700;
+    color: #222;
+}
+.hp-fractions-container .hp-frac-sep {
+    color: #bbb;
+    user-select: none;
+    font-size: 0.85em;
+    padding: 0 1px;
+}
