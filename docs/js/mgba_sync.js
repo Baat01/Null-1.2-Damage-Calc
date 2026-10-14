@@ -7,8 +7,7 @@
  *   2. Auto-Sync toggle with polling loop  (🔁 Auto-Sync : ON/OFF)
  *   3. "Sans objets / No Items" checkbox — strips held items on import
  *   4. Set name mirrors native Import button (.import-name-text or "Custom Set")
- *      Nicknamed Pokémon → nickname used as set key automatically via addSets() parser.
- *      Non-nicknamed Pokémon → falls back to the import name field value.
+ *      All Pokémon (nicknamed or not) use the set name field value.
  */
 
 const MGBA_SYNC_URL = "http://localhost:31123/vs/all";
@@ -44,9 +43,7 @@ function hashCode(str) {
  *   → .import-name-text value if non-empty, else "Custom Set"
  */
 function getImportSetName() {
-    const el = document.getElementsByClassName("import-name-text")[0];
-    const v  = el && el.value.trim();
-    return v || "Custom Set";
+    return (document.querySelector(".import-name-text")?.value.trim()) || "Custom Set";
 }
 
 // ─── Showdown Text Builder ─────────────────────────────────────────────────────
@@ -58,9 +55,19 @@ function getImportSetName() {
  * @returns {string|null}
  */
 function monToShowdownText(mon, { stripItems = false } = {}) {
-    const species = mon.speciesName || mon.species;
+    let species = mon.speciesName || mon.species;
     if (!species || species === "None" || species === "0" || species === 0) return null;
     if (mon.isEgg || mon.isBadEgg) return null;
+
+    // Sanitize species: ensure no nickname or parentheses leaks into the species name
+    if (typeof species === "string" && species.indexOf("(") !== -1) {
+        const parenMatch = species.match(/\(([^)]+)\)/);
+        if (parenMatch && typeof calc !== "undefined" && calc.SPECIES && calc.SPECIES[9] && calc.SPECIES[9][parenMatch[1].trim()]) {
+            species = parenMatch[1].trim();
+        } else {
+            species = species.split("(")[0].trim();
+        }
+    }
 
     // Header: Always use the base species on the header line so Showdown uses setName
     // instead of promoting an in-game nickname as the set key.
@@ -155,19 +162,42 @@ function wipeOldMgbaSets() {
  * @returns {number} number of Pokémon successfully imported
  */
 function processPayload(data, { stripItems = false } = {}) {
-    // Mirror the native Import button: read .import-name-text or fall back to "Custom Set"
-    const setName = getImportSetName();
+    // Read set name from .import-name-text or fall back to "Custom Set"
+    const setName = (document.querySelector(".import-name-text")?.value.trim()) || "Custom Set";
 
     // Purge legacy "mGBA "-prefixed sets before re-import
     wipeOldMgbaSets();
 
     let importedCount = 0;
 
+    // Helper to clean up any legacy sets saved under this mon's nickname
+    function cleanupOldNicknameSet(mon, species) {
+        if (mon.nickname && mon.nickname !== species) {
+            if (typeof deleteMovesetFromAllSetdex === "function") {
+                deleteMovesetFromAllSetdex(species, mon.nickname);
+            }
+            if (localStorage.customsets) {
+                try {
+                    const cs = JSON.parse(localStorage.customsets);
+                    if (cs[species] && cs[species][mon.nickname]) {
+                        delete cs[species][mon.nickname];
+                        if (Object.keys(cs[species]).length === 0) delete cs[species];
+                        localStorage.customsets = JSON.stringify(cs);
+                    }
+                } catch (_) {}
+            }
+            $(`.trainer-pok[data-id="${species} (${mon.nickname})"]`).remove();
+        }
+    }
+
     // Party
     if (data.party && data.party.length > 0) {
         data.party.forEach((mon) => {
+            const species = mon.speciesName || mon.species;
+            cleanupOldNicknameSet(mon, species);
             const text = monToShowdownText(mon, { stripItems });
             if (text) {
+                console.log(`[mGBA Sync] Party export (${setName}):\n` + text);
                 addSets(text, setName);
                 importedCount++;
             }
@@ -180,8 +210,11 @@ function processPayload(data, { stripItems = false } = {}) {
             if (SyncState.SETTINGS.excludeDeadBox) {
                 if (slotData.isDeadBox || (slotData.box >= 11 && slotData.box <= 13)) return;
             }
+            const species = slotData.speciesName || slotData.species;
+            cleanupOldNicknameSet(slotData, species);
             const text = monToShowdownText(slotData, { stripItems });
             if (text) {
+                console.log(`[mGBA Sync] Box export (${setName}):\n` + text);
                 addSets(text, setName);
                 importedCount++;
             }

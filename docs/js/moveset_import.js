@@ -648,10 +648,12 @@ function addSets(pokes, name) {
 				currentPoke = calc.SPECIES[9][currentRow[j].trim()];
 				currentPoke.name = currentRow[j].trim();
 				currentPoke.item = getItem(currentRow, j + 1);
-				if (j === 1 && currentRow[0].trim()) {
+				if (name && typeof name === "string" && name.trim() !== "") {
+					currentPoke.nameProp = name.trim();
+				} else if (j === 1 && currentRow[0].trim()) {
 					currentPoke.nameProp = currentRow[0].trim();
 				} else {
-					currentPoke.nameProp = name;
+					currentPoke.nameProp = "Custom Set";
 				}
 				currentPoke.isCustomSet = true;
 				currentPoke.ability = getAbility(rows[i + 1].split(":"));
