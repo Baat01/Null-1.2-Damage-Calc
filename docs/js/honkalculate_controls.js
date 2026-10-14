@@ -136,7 +136,8 @@ function getSelectedTiers() {
 
 function calculateMovesOfAttacker(gen, attacker, defender, field) {
 	var results = [];
-	for (var i = 0; i < 4; i++) {
+	var numMoves = attacker.moves ? attacker.moves.length : 4;
+	for (var i = 0; i < numMoves; i++) {
 		results[i] = calc.calculate(gen, attacker, defender, attacker.moves[i], field);
 	}
 	return results;

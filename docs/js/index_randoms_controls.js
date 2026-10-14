@@ -11,7 +11,7 @@ lastManualStatus["#p2"] = "Healthy";
 lastAutoStatus["#p1"] = "Healthy";
 
 var resultLocations = [[], []];
-for (var i = 0; i < 4; i++) {
+for (var i = 0; i < 8; i++) {
 	resultLocations[0].push({
 		"move": "#resultMoveL" + (i + 1),
 		"damage": "#resultDamageL" + (i + 1)
@@ -69,55 +69,72 @@ function performCalculations() {
 	var result, maxDamage;
 	var bestResult;
 	var zProtectAlerted = false;
-	for (var i = 0; i < 4; i++) {
+	var numMovesP1 = p1.moves.length;
+	var numMovesP2 = p2.moves.length;
+	var maxMoves = Math.max(numMovesP1, numMovesP2, (typeof is8MovesEnabled === "function" && is8MovesEnabled()) ? 8 : 4);
+	for (var i = 0; i < maxMoves; i++) {
 		// P1
-		result = damageResults[0][i];
-		maxDamage = result.range()[1] * p1.moves[i].hits;
-		if (!zProtectAlerted && maxDamage > 0 && (p1.item || "").indexOf(" Z") === -1 && p1field.defenderSide.isProtected && p1.moves[i].isZ) {
-			alert('Although only possible while hacking, Z-Moves fully damage through protect without a Z-Crystal');
-			zProtectAlerted = true;
+		if (i < numMovesP1 && damageResults[0] && damageResults[0][i] && p1.moves[i]) {
+			result = damageResults[0][i];
+			maxDamage = result.range()[1] * p1.moves[i].hits;
+			if (!zProtectAlerted && maxDamage > 0 && (p1.item || "").indexOf(" Z") === -1 && p1field.defenderSide.isProtected && p1.moves[i].isZ) {
+				alert('Although only possible while hacking, Z-Moves fully damage through protect without a Z-Crystal');
+				zProtectAlerted = true;
+			}
+			p1.maxDamages.push({moveOrder: i, maxDamage: maxDamage});
+			p1.maxDamages.sort(function (firstMove, secondMove) {
+				return secondMove.maxDamage - firstMove.maxDamage;
+			});
+			var mName1 = p1.moves[i].name || "(No Move)";
+			$(resultLocations[0][i].move + " + label").text(mName1.replace("Hidden Power", "HP"));
+			$(resultLocations[0][i].damage).text(result.moveDesc(notation));
+		} else if (resultLocations[0][i]) {
+			$(resultLocations[0][i].move + " + label").text("(No Move)");
+			$(resultLocations[0][i].damage).text("??? - ???%");
 		}
-		p1.maxDamages.push({moveOrder: i, maxDamage: maxDamage});
-		p1.maxDamages.sort(function (firstMove, secondMove) {
-			return secondMove.maxDamage - firstMove.maxDamage;
-		});
-		$(resultLocations[0][i].move + " + label").text(p1.moves[i].name.replace("Hidden Power", "HP"));
-		$(resultLocations[0][i].damage).text(result.moveDesc(notation));
 
 		// P2
-		result = damageResults[1][i];
-		maxDamage = result.range()[1] * p2.moves[i].hits;
-		if (!zProtectAlerted && maxDamage > 0 && (p2.item || "").indexOf(" Z") === -1 && p2field.defenderSide.isProtected && p2.moves[i].isZ) {
-			alert('Although only possible while hacking, Z-Moves fully damage through protect without a Z-Crystal');
-			zProtectAlerted = true;
+		if (i < numMovesP2 && damageResults[1] && damageResults[1][i] && p2.moves[i]) {
+			result = damageResults[1][i];
+			maxDamage = result.range()[1] * p2.moves[i].hits;
+			if (!zProtectAlerted && maxDamage > 0 && (p2.item || "").indexOf(" Z") === -1 && p2field.defenderSide.isProtected && p2.moves[i].isZ) {
+				alert('Although only possible while hacking, Z-Moves fully damage through protect without a Z-Crystal');
+				zProtectAlerted = true;
+			}
+			p2.maxDamages.push({moveOrder: i, maxDamage: maxDamage});
+			p2.maxDamages.sort(function (firstMove, secondMove) {
+				return secondMove.maxDamage - firstMove.maxDamage;
+			});
+			var mName2 = p2.moves[i].name || "(No Move)";
+			$(resultLocations[1][i].move + " + label").text(mName2.replace("Hidden Power", "HP"));
+			$(resultLocations[1][i].damage).text(result.moveDesc(notation));
+		} else if (resultLocations[1][i]) {
+			$(resultLocations[1][i].move + " + label").text("(No Move)");
+			$(resultLocations[1][i].damage).text("??? - ???%");
 		}
-		p2.maxDamages.push({moveOrder: i, maxDamage: maxDamage});
-		p2.maxDamages.sort(function (firstMove, secondMove) {
-			return secondMove.maxDamage - firstMove.maxDamage;
-		});
-		$(resultLocations[1][i].move + " + label").text(p2.moves[i].name.replace("Hidden Power", "HP"));
-		$(resultLocations[1][i].damage).text(result.moveDesc(notation));
+	}
 
-		// BOTH
-		var bestMove;
-		if (fastestSide === "tie") {
-			// Technically the order should be random in a speed tie, but this non-determinism makes manual testing more difficult.
-			// battling.sort(function () { return 0.5 - Math.random(); });
-			bestMove = battling[0].maxDamages[0].moveOrder;
-			var chosenPokemon = battling[0] === p1 ? "0" : "1";
-			bestResult = $(resultLocations[chosenPokemon][bestMove].move);
-		} else {
-			bestMove = battling[fastestSide].maxDamages[0].moveOrder;
-			bestResult = $(resultLocations[fastestSide][bestMove].move);
-		}
+	// BOTH
+	var bestMove;
+	if (fastestSide === "tie") {
+		// Technically the order should be random in a speed tie, but this non-determinism makes manual testing more difficult.
+		// battling.sort(function () { return 0.5 - Math.random(); });
+		bestMove = (battling[0].maxDamages[0] && battling[0].maxDamages[0].moveOrder !== undefined) ? battling[0].maxDamages[0].moveOrder : 0;
+		var chosenPokemon = battling[0] === p1 ? "0" : "1";
+		bestResult = $(resultLocations[chosenPokemon][bestMove].move);
+	} else {
+		bestMove = (battling[fastestSide].maxDamages[0] && battling[fastestSide].maxDamages[0].moveOrder !== undefined) ? battling[fastestSide].maxDamages[0].moveOrder : 0;
+		bestResult = $(resultLocations[fastestSide][bestMove].move);
 	}
 	if ($('.locked-move').length) {
 		bestResult = $('.locked-move');
-	} else {
+	} else if (bestResult && bestResult.length) {
 		stickyMoves.setSelectedMove(bestResult.prop("id"));
 	}
-	bestResult.prop("checked", true);
-	bestResult.change();
+	if (bestResult && bestResult.length) {
+		bestResult.prop("checked", true);
+		bestResult.change();
+	}
 	$("#resultHeaderL").text(p1.name + "'s Moves (select one to show detailed results)");
 	$("#resultHeaderR").text(p2.name + "'s Moves (select one to show detailed results)");
 }
@@ -149,7 +166,8 @@ function calculationsColors(p1info, p2) {
 	var p1KO = 0, p2KO = 0;
 	//Highest damage
 	var p1HD = 0, p2HD = 0;
-	for (var i = 0; i < 4; i++) {
+	var numMovesCalcP1 = Math.min(p1.moves.length, ccResults[0].length);
+	for (var i = 0; i < numMovesCalcP1; i++) {
 		// P1
 		result = ccResults[0][i];
 		//lowest rolls in %
@@ -170,7 +188,10 @@ function calculationsColors(p1info, p2) {
 				}
 			}
 		}
+	}
 
+	var numMovesCalcP2 = Math.min(p2.moves.length, ccResults[1].length);
+	for (var i = 0; i < numMovesCalcP2; i++) {
 		// P2
 		result = ccResults[1][i];
 		//some damage like sonic boom acts a bit weird.
@@ -265,9 +286,14 @@ function checkStatBoost(p1, p2) {
 function calculateAllMoves(gen, p1, p1field, p2, p2field) {
 	checkStatBoost(p1, p2);
 	var results = [[], []];
-	for (var i = 0; i < 4; i++) {
-		results[0][i] = calc.calculate(gen, p1, p2, p1.moves[i], p1field);
-		results[1][i] = calc.calculate(gen, p2, p1, p2.moves[i], p2field);
+	var maxMoves = Math.max(p1.moves.length, p2.moves.length, (typeof is8MovesEnabled === "function" && is8MovesEnabled()) ? 8 : 4);
+	for (var i = 0; i < maxMoves; i++) {
+		if (i < p1.moves.length) {
+			results[0][i] = calc.calculate(gen, p1, p2, p1.moves[i], p1field);
+		}
+		if (i < p2.moves.length) {
+			results[1][i] = calc.calculate(gen, p2, p1, p2.moves[i], p2field);
+		}
 	}
 	return results;
 }

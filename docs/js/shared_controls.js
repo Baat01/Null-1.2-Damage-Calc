@@ -292,7 +292,7 @@ function drawHealthBar(poke, max, current) {
 	healthbar.css("background", "linear-gradient(to right, " + fillColor + " " + fillPercent + "%, white 0%");
 }
 // TODO: these HP inputs should really be input type=number with min=0, step=1, constrained by max=maxHP or 100
-$(".current-hp").keyup(function () {
+$(".current-hp").bind("keyup change input", function () {
 	var max = $(this).parent().children(".max-hp").text();
 	validate($(this), 0, max);
 	var current = $(this).val();
@@ -1637,11 +1637,13 @@ $(".set-selector").change(function () {
 					}
 				}
 			}
-			var moves = selectMovesFromRandomOptions(setMoves);
-			for (i = 0; i < 4; i++) {
+			var moves = randset ? selectMovesFromRandomOptions(setMoves) : setMoves;
+			for (i = 0; i < 8; i++) {
 				moveObj = pokeObj.find(".move" + (i + 1) + " select.move-selector");
+				if (!moveObj.length) continue;
 				moveObj.attr('data-prev', moveObj.val());
-				setSelectValueIfValid(moveObj, moves[i], "(No Move)");
+				var mVal = (moves && moves[i]) ? moves[i] : "(No Move)";
+				setSelectValueIfValid(moveObj, mVal, "(No Move)");
 				moveObj.change();
 			}
 			if (randset) {
@@ -1662,8 +1664,9 @@ $(".set-selector").change(function () {
 			pokeObj.find(".nature").val("Hardy");
 			setSelectValueIfValid(abilityObj, pokemon.ab, "");
 			itemObj.val("");
-			for (i = 0; i < 4; i++) {
+			for (i = 0; i < 8; i++) {
 				moveObj = pokeObj.find(".move" + (i + 1) + " select.move-selector");
+				if (!moveObj.length) continue;
 				moveObj.attr('data-prev', moveObj.val());
 				moveObj.val("(No Move)");
 				moveObj.change();
@@ -2135,10 +2138,12 @@ function createPokemon(pokeInfo) {
 		}
 
 		var pokemonMoves = [];
-		for (var i = 0; i < 4; i++) {
-			var moveName = moveNames[i];
-			var isCrit = $('.move-crit')[i].checked;
-			pokemonMoves.push(new calc.Move(gen, moves[moveName] ? moveName : "(No Move)", { ability: ability, item: item, isCrit: isCrit, }));
+		var maxMovesToBuild = (typeof is8MovesEnabled === "function" && is8MovesEnabled()) ? 8 : 4;
+		for (var i = 0; i < maxMovesToBuild; i++) {
+			var moveName = moveNames ? moveNames[i] : undefined;
+			var critEl = $('.move-crit')[i];
+			var isCrit = critEl ? critEl.checked : false;
+			pokemonMoves.push(new calc.Move(gen, (moveName && moves[moveName]) ? moveName : "(No Move)", { ability: ability, item: item, isCrit: isCrit, }));
 		}
 
 		if (isRandoms) {
@@ -2214,12 +2219,23 @@ function createPokemon(pokeInfo) {
 			curHP: curHP,
 			status: CALC_STATUS[pokeInfo.find(".status").val()],
 			toxicCounter: status === 'Badly Poisoned' ? ~~pokeInfo.find(".toxic-counter").val() : 0,
-			moves: [
-				getMoveDetails(pokeInfo.find(".move1"), name, ability, item, isDynamaxed),
-				getMoveDetails(pokeInfo.find(".move2"), name, ability, item, isDynamaxed),
-				getMoveDetails(pokeInfo.find(".move3"), name, ability, item, isDynamaxed),
-				getMoveDetails(pokeInfo.find(".move4"), name, ability, item, isDynamaxed)
-			],
+			moves: (function () {
+				var mvList = [
+					getMoveDetails(pokeInfo.find(".move1"), name, ability, item, isDynamaxed),
+					getMoveDetails(pokeInfo.find(".move2"), name, ability, item, isDynamaxed),
+					getMoveDetails(pokeInfo.find(".move3"), name, ability, item, isDynamaxed),
+					getMoveDetails(pokeInfo.find(".move4"), name, ability, item, isDynamaxed)
+				];
+				if (typeof is8MovesEnabled === "function" && is8MovesEnabled()) {
+					for (var mIdx = 5; mIdx <= 8; mIdx++) {
+						var mEl = pokeInfo.find(".move" + mIdx);
+						if (mEl.length) {
+							mvList.push(getMoveDetails(mEl, name, ability, item, isDynamaxed));
+						}
+					}
+				}
+				return mvList;
+			})(),
 			overrides: {
 				baseStats: baseStats,
 				types: types
@@ -2247,7 +2263,7 @@ function getMoveDetails(moveInfo, species, ability, item, useMax) {
 		type: moveInfo.find(".move-type").val()
 	};
 	if (gen >= 4) overrides.category = moveInfo.find(".move-cat").val();
-	return new calc.Move(gen, moveName, {
+	return new calc.Move(gen, moveName || "(No Move)", {
 		ability: ability, item: item, useZ: isZMove, species: species, isCrit: isCrit, hits: hits,
 		timesUsed: timesUsed, timesUsedWithMetronome: timesUsedWithMetronome, overrides: overrides, useMax: useMax
 	});
@@ -2294,9 +2310,15 @@ function getSetFromForm(panelId) {
 		ivs[leg] = gen > 2 ? ~~pokeInfo.find("." + leg + " .ivs").val() : ~~pokeInfo.find("." + leg + " .dvs").val() * 2 + 1;
 	}
 	var moves = [];
-	for (var j = 0; j < 4; j++) {
-		var moveName = pokeInfo.find(".move" + (j + 1) + " select.move-selector").val();
+	for (var j = 0; j < 8; j++) {
+		var mEl = pokeInfo.find(".move" + (j + 1) + " select.move-selector");
+		if (!mEl.length) break;
+		if (j >= 4 && (typeof is8MovesEnabled === "function" && !is8MovesEnabled() && (!mEl.val() || mEl.val() === "(No Move)"))) break;
+		var moveName = mEl.val();
 		moves.push(moveName && moveName !== "(No Move)" ? moveName : "");
+	}
+	while (moves.length > 4 && !moves[moves.length - 1]) {
+		moves.pop();
 	}
 	var setdexKey = resolveSetdexKey(name);
 	var existingSet = typeof setdex !== "undefined" && setdex[setdexKey] && setdex[setdexKey][nameProp] ? setdex[setdexKey][nameProp] : null;
@@ -2385,6 +2407,16 @@ function createField() {
 	});
 }
 
+var HP_FRACTIONS_CONFIG = [
+	{ key: "16", divisor: 16, label: "1/16", desc: "Leftovers, Toxic/Burn, Hail/Sandstorm, Grassy Terrain" },
+	{ key: "10", divisor: 10, label: "1/10", desc: "Life Orb recoil" },
+	{ key: "8",  divisor: 8,  label: "1/8",  desc: "Stealth Rock neutral, Poison, Black Sludge" },
+	{ key: "6",  divisor: 6,  label: "1/6",  desc: "Rocky Helmet" },
+	{ key: "4",  divisor: 4,  label: "1/4",  desc: "Substitute, Sitrus Berry" },
+	{ key: "3",  divisor: 3,  label: "1/3",  desc: "Regenerator" },
+	{ key: "2",  divisor: 2,  label: "1/2",  desc: "Belly Drum, Recover, Roost, Pinch Berry" }
+];
+
 function updateHpFractionsFromMaxHp(maxHp, container) {
 	var $container = $(container);
 	if (!$container.hasClass("hp-fractions-container")) {
@@ -2393,18 +2425,29 @@ function updateHpFractionsFromMaxHp(maxHp, container) {
 	if (!$container.length) return;
 
 	var num = Number(maxHp);
-	if (isNaN(num) || num <= 0) {
-		$container.find(".hp-frac-val").text("0");
-		return;
-	}
+	var isInvalid = isNaN(num) || num <= 0;
 
-	$container.find(".hp-frac-16").text(Math.floor(num / 16));
-	$container.find(".hp-frac-10").text(Math.floor(num / 10));
-	$container.find(".hp-frac-8").text(Math.floor(num / 8));
-	$container.find(".hp-frac-6").text(Math.floor(num / 6));
-	$container.find(".hp-frac-4").text(Math.floor(num / 4));
-	$container.find(".hp-frac-3").text(Math.floor(num / 3));
-	$container.find(".hp-frac-2").text(Math.floor(num / 2));
+	// Ensure mode button exists
+	var $modeBtn = $container.find(".hp-fraction-mode-btn");
+	if (!$modeBtn.length) {
+		$modeBtn = $('<button type="button" class="hp-fraction-mode-btn mode-minus" data-mode="minus" title="Mode actuel : Soustraction (-). Cliquer pour passer en Addition (+)">-</button>');
+		$container.append($modeBtn);
+	}
+	var mode = $modeBtn.attr("data-mode") === "plus" ? "plus" : "minus";
+	var actionVerb = mode === "plus" ? "add" : "deduct";
+
+	for (var i = 0; i < HP_FRACTIONS_CONFIG.length; i++) {
+		var cfg = HP_FRACTIONS_CONFIG[i];
+		var val = isInvalid ? 0 : Math.floor(num / cfg.divisor);
+		var $valSpan = $container.find(".hp-frac-" + cfg.key);
+		$valSpan.text(val);
+		var $btn = $valSpan.closest(".hp-frac-item");
+		if ($btn.length) {
+			$btn.attr("data-value", val);
+			$btn.attr("data-fraction", cfg.label);
+			$btn.attr("title", "Click to " + actionVerb + " " + val + " HP (" + cfg.label + " - " + cfg.desc + ")");
+		}
+	}
 }
 
 function updateHpFractions(poke, maxHp) {
@@ -2416,8 +2459,94 @@ function updateHpFractions(poke, maxHp) {
 	updateHpFractionsFromMaxHp(maxHp, $poke);
 }
 
+function setHpFractionMode($btn, mode) {
+	var isPlus = mode === "plus";
+	var newMode = isPlus ? "plus" : "minus";
+	$btn.attr("data-mode", newMode);
+	$btn.text(isPlus ? "+" : "-");
+	$btn.toggleClass("mode-plus", isPlus).toggleClass("mode-minus", !isPlus);
+	$btn.attr("title", isPlus
+		? "Mode actuel : Addition (+). Cliquer pour passer en Soustraction (-)"
+		: "Mode actuel : Soustraction (-). Cliquer pour passer en Addition (+)");
+
+	var $container = $btn.closest(".hp-fractions-container");
+	var actionVerb = isPlus ? "add" : "deduct";
+	$container.find(".hp-frac-item").each(function () {
+		var $item = $(this);
+		var fraction = $item.attr("data-fraction");
+		var val = $item.attr("data-value") || $item.find(".hp-frac-val").text();
+		var cfg = null;
+		for (var k = 0; k < HP_FRACTIONS_CONFIG.length; k++) {
+			if (HP_FRACTIONS_CONFIG[k].label === fraction) {
+				cfg = HP_FRACTIONS_CONFIG[k];
+				break;
+			}
+		}
+		var desc = cfg ? cfg.desc : "";
+		$item.attr("title", "Click to " + actionVerb + " " + val + " HP (" + fraction + (desc ? " - " + desc : "") + ")");
+	});
+}
+
+window.HP_FRACTIONS_CONFIG = HP_FRACTIONS_CONFIG;
 window.updateHpFractions = updateHpFractions;
 window.updateHpFractionsFromMaxHp = updateHpFractionsFromMaxHp;
+window.setHpFractionMode = setHpFractionMode;
+
+// Toggle HP fractions mode (+ / -)
+$(document).on("click", ".hp-fraction-mode-btn", function (e) {
+	e.preventDefault();
+	e.stopPropagation();
+	var $btn = $(this);
+	var currentMode = $btn.attr("data-mode") === "plus" ? "plus" : "minus";
+	setHpFractionMode($btn, currentMode === "minus" ? "plus" : "minus");
+});
+
+// Clickable HP Fractions to deduct/add damage from/to Current HP
+$(document).on("click", ".hp-fractions-container .hp-frac-item, .hp-fractions-container .hp-fraction-btn", function (e) {
+	e.preventDefault();
+	var $item = $(this);
+	var $panel = $item.closest(".poke-info");
+	if (!$panel.length) return;
+
+	var $currentHpInput = $panel.find(".current-hp");
+	if (!$currentHpInput.length) return;
+
+	var maxHp = parseInt($panel.find(".max-hp").first().text(), 10);
+	if (isNaN(maxHp) || maxHp <= 0) {
+		maxHp = parseInt($panel.find(".hp .total").first().text(), 10) || 0;
+	}
+
+	var currentVal = $currentHpInput.val();
+	var currentHp = parseInt(currentVal, 10);
+	if (isNaN(currentHp)) {
+		currentHp = maxHp;
+	}
+
+	var amount = parseInt($item.attr("data-value") || $item.find(".hp-frac-val").text(), 10) || 0;
+	if (amount <= 0) return;
+
+	var $container = $item.closest(".hp-fractions-container");
+	var $modeBtn = $container.find(".hp-fraction-mode-btn");
+	var isAddition = $modeBtn.attr("data-mode") === "plus";
+
+	var newHp;
+	if (isAddition) {
+		newHp = Math.min(maxHp, currentHp + amount);
+	} else {
+		newHp = Math.max(0, currentHp - amount);
+	}
+
+	$currentHpInput.val(newHp);
+	calcPercentHP($panel, maxHp, newHp);
+	$currentHpInput.trigger("change").trigger("input");
+});
+
+$(document).on("keydown", ".hp-fractions-container .hp-frac-item, .hp-fractions-container .hp-fraction-btn", function (e) {
+	if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") {
+		e.preventDefault();
+		$(this).trigger("click");
+	}
+});
 
 function calcHP(poke) {
 	var total = calcStat(poke, "hp");
@@ -3936,7 +4065,7 @@ $(document).ready(function () {
 	lastOpposingTrainerPersistEnabled = true;
 });
 
-// ─── Feature Visibility Settings (Move Filter, mGBA Sync, HP Fractions) ───────
+// ─── Feature Visibility Settings (Move Filter, mGBA Sync, HP Fractions, 8 Moves) ───────
 var NULL_CALC_SETTINGS_KEY = "nullCalcSettings";
 
 function getNullCalcSettings() {
@@ -3947,14 +4076,16 @@ function getNullCalcSettings() {
 			return {
 				showMoveFilter: parsed.showMoveFilter !== false,
 				showMgbaSync: parsed.showMgbaSync !== false,
-				showHpFractions: parsed.showHpFractions !== false
+				showHpFractions: parsed.showHpFractions !== false,
+				enable8Moves: parsed.enable8Moves === true
 			};
 		}
 	} catch (e) {}
 	return {
 		showMoveFilter: true,
 		showMgbaSync: true,
-		showHpFractions: true
+		showHpFractions: true,
+		enable8Moves: false
 	};
 }
 
@@ -3963,6 +4094,36 @@ function saveNullCalcSettings(settings) {
 		localStorage.setItem(NULL_CALC_SETTINGS_KEY, JSON.stringify(settings));
 	} catch (e) {}
 }
+
+function is8MovesEnabled() {
+	var cb = document.getElementById("setting-toggle-8-moves");
+	if (cb) return cb.checked;
+	return document.documentElement.classList.contains("enable-8-moves");
+}
+window.is8MovesEnabled = is8MovesEnabled;
+
+function apply8MovesMode(enabled) {
+	var doc = document.documentElement;
+	doc.classList.toggle("enable-8-moves", enabled);
+	var cb = document.getElementById("setting-toggle-8-moves");
+	if (cb && cb.checked !== !!enabled) {
+		cb.checked = !!enabled;
+	}
+	var extraSlots = document.querySelectorAll(".extra-moveslot");
+	for (var i = 0; i < extraSlots.length; i++) {
+		extraSlots[i].classList.toggle("hidden-moves", !enabled);
+	}
+	if (!enabled) {
+		var checkedExtra = document.querySelector(".extra-moveslot input.result-move:checked");
+		if (checkedExtra) {
+			checkedExtra.checked = false;
+		}
+	}
+	if (typeof performCalculations === "function") {
+		performCalculations();
+	}
+}
+window.apply8MovesMode = apply8MovesMode;
 
 function applyFeatureVisibility(feature, isVisible) {
 	var doc = document.documentElement;
@@ -3994,10 +4155,12 @@ function initFeatureVisibilitySettings() {
 	var moveFilterCb = document.getElementById("setting-toggle-move-filter");
 	var mgbaSyncCb   = document.getElementById("setting-toggle-mgba-sync");
 	var hpFracCb     = document.getElementById("setting-toggle-hp-fractions");
+	var moves8Cb     = document.getElementById("setting-toggle-8-moves");
 
 	applyFeatureVisibility("showMoveFilter", settings.showMoveFilter);
 	applyFeatureVisibility("showMgbaSync", settings.showMgbaSync);
 	applyFeatureVisibility("showHpFractions", settings.showHpFractions);
+	apply8MovesMode(settings.enable8Moves);
 
 	if (moveFilterCb) {
 		moveFilterCb.checked = settings.showMoveFilter;
@@ -4023,6 +4186,15 @@ function initFeatureVisibilitySettings() {
 			settings.showHpFractions = hpFracCb.checked;
 			saveNullCalcSettings(settings);
 			applyFeatureVisibility("showHpFractions", settings.showHpFractions);
+		});
+	}
+
+	if (moves8Cb) {
+		moves8Cb.checked = settings.enable8Moves;
+		moves8Cb.addEventListener("change", function () {
+			settings.enable8Moves = moves8Cb.checked;
+			saveNullCalcSettings(settings);
+			apply8MovesMode(settings.enable8Moves);
 		});
 	}
 }

@@ -112,6 +112,14 @@
             moves: [
                 "Clamp", "Infestation", "Sand Tomb", "Whirlpool", "Wrap", "Fire Spin", "Thunder Cage", "Magma Storm", "Snap Trap"
             ]
+        },
+        {
+            id: "default-Priority",
+            name: "Priority Moves",
+            isDefault: true,
+            moves: [
+                "Fake Out", "Extreme Speed", "First Impression", "Feint", "Mach Punch", "Bullet Punch", "Ice Shard", "Shadow Sneak", "Aqua Jet", "Quick Attack", "Accelerock", "Sucker Punch", "Vacuum Wave", "Thunderclap", "Zippy Zap"
+            ]
         }
     ];
 

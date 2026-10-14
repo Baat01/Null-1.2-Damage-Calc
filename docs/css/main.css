@@ -1251,7 +1251,11 @@ select.toxic-counter {
 .poke-info .move1,
 .poke-info .move2,
 .poke-info .move3,
-.poke-info .move4 {
+.poke-info .move4,
+.poke-info .move5,
+.poke-info .move6,
+.poke-info .move7,
+.poke-info .move8 {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -1259,7 +1263,11 @@ select.toxic-counter {
 }
 .poke-info .move2,
 .poke-info .move3,
-.poke-info .move4 {
+.poke-info .move4,
+.poke-info .move5,
+.poke-info .move6,
+.poke-info .move7,
+.poke-info .move8 {
     margin-top: 2px;
 }
 .move-selector {
@@ -2152,8 +2160,8 @@ select.status {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 2px 5px;
-    font-size: 0.82em;
+    gap: 2px;
+    font-size: 0.80em;
     color: #666;
     margin: 3px 0 5px 0;
     line-height: 1.25;
@@ -2161,16 +2169,39 @@ select.status {
 }
 .hp-fractions-container span,
 .hp-fractions-container .hp-frac-item,
+.hp-fractions-container .hp-fraction-btn,
 .hp-fractions-container .hp-frac-label,
 .hp-fractions-container .hp-frac-val,
 .hp-fractions-container .hp-frac-sep {
     width: auto !important;
 }
-.hp-fractions-container .hp-frac-item {
+.hp-fractions-container .hp-frac-item,
+.hp-fractions-container .hp-fraction-btn {
     display: inline-flex !important;
     align-items: center;
     white-space: nowrap;
-    cursor: help;
+    cursor: pointer;
+    border-radius: 3px;
+    padding: 1px 2px;
+    transition: background-color 0.15s ease, transform 0.08s ease;
+}
+.hp-fractions-container .hp-frac-item:hover,
+.hp-fractions-container .hp-fraction-btn:hover {
+    background-color: rgba(0, 0, 0, 0.08);
+}
+.hp-fractions-container .hp-frac-item:hover .hp-frac-val,
+.hp-fractions-container .hp-fraction-btn:hover .hp-frac-val {
+    text-decoration: underline;
+}
+.hp-fractions-container .hp-frac-item:active,
+.hp-fractions-container .hp-fraction-btn:active {
+    transform: scale(0.95);
+    background-color: rgba(0, 0, 0, 0.14);
+}
+.hp-fractions-container .hp-frac-item:focus-visible,
+.hp-fractions-container .hp-fraction-btn:focus-visible {
+    outline: 2px solid #4a90e2;
+    outline-offset: 1px;
 }
 .hp-fractions-container .hp-frac-label {
     color: #555;
@@ -2184,7 +2215,57 @@ select.status {
     color: #bbb;
     user-select: none;
     font-size: 0.85em;
-    padding: 0 1px;
+    padding: 0;
+}
+/* HP Fraction Mode Toggle Button (+ / -) */
+.hp-fraction-mode-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    padding: 0 4px;
+    height: 15px;
+    min-width: 16px;
+    margin-left: 3px;
+    font-size: 11px;
+    font-weight: bold;
+    line-height: 1;
+    border-radius: 3px;
+    cursor: pointer;
+    user-select: none;
+    border: 1px solid transparent;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.08s ease;
+}
+.hp-fraction-mode-btn:active {
+    transform: scale(0.92);
+}
+.hp-fraction-mode-btn:focus-visible {
+    outline: 2px solid #4a90e2;
+    outline-offset: 1px;
+}
+.hp-fraction-mode-btn.mode-minus,
+.hp-fraction-mode-btn[data-mode="minus"] {
+    background-color: rgba(220, 53, 69, 0.12);
+    color: #c82333;
+    border-color: rgba(220, 53, 69, 0.4);
+}
+.hp-fraction-mode-btn.mode-minus:hover,
+.hp-fraction-mode-btn[data-mode="minus"]:hover {
+    background-color: rgba(220, 53, 69, 0.22);
+    border-color: #dc3545;
+    color: #a71d2a;
+}
+.hp-fraction-mode-btn.mode-plus,
+.hp-fraction-mode-btn[data-mode="plus"] {
+    background-color: rgba(40, 167, 69, 0.15);
+    color: #218838;
+    border-color: rgba(40, 167, 69, 0.4);
+}
+.hp-fraction-mode-btn.mode-plus:hover,
+.hp-fraction-mode-btn[data-mode="plus"]:hover {
+    background-color: rgba(40, 167, 69, 0.25);
+    border-color: #28a745;
+    color: #1e7e34;
 }
 /* ========================================================================== */
 /* Move Categories Modal                                                        */
@@ -2510,3 +2591,20 @@ html.hide-feature-mgba-sync .mgba-sync-container,
 html.hide-feature-hp-fractions .hp-fractions-container {
     display: none !important;
 }
+
+/* ── 8 Moveslots Mode ─────────────────────────────────────────────────────── */
+.extra-moveslot.hidden-moves,
+html:not(.enable-8-moves) .extra-moveslot {
+    display: none !important;
+}
+
+html.enable-8-moves .move-result-group {
+    display: flow-root;
+    margin-bottom: 1.5em;
+}
+
+html.enable-8-moves label[for="resultMoveL4"],
+html.enable-8-moves label[for="resultMoveR4"] {
+    border-radius: 0;
+}
+

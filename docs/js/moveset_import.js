@@ -49,10 +49,13 @@ function pokemonToExportText(pokemon) {
 		finalText += "\n";
 	}
 
-	for (var i = 0; i < 4; i++) {
-		var moveName = pokemon.moves[i].name;
-		if (moveName !== "(No Move)") {
-			finalText += "- " + moveName + "\n";
+	var exportMaxMoves = (typeof is8MovesEnabled === "function" && is8MovesEnabled()) ? pokemon.moves.length : Math.min(4, pokemon.moves.length);
+	for (var i = 0; i < exportMaxMoves; i++) {
+		if (pokemon.moves[i]) {
+			var moveName = pokemon.moves[i].name;
+			if (moveName && moveName !== "(No Move)") {
+				finalText += "- " + moveName + "\n";
+			}
 		}
 	}
 	return finalText.trim();
@@ -116,7 +119,8 @@ function buildMegaPokemonFromBasePokemon(basePokemon, megaSpeciesName) {
 	var megaAbility = getMegaAbilityForSpecies(megaSpeciesName);
 	var megaItem = getMegaItemForExport(basePokemon.item, megaSpeciesName);
 	var megaMoves = [];
-	for (var i = 0; i < 4; i++) {
+	var numMoves = (typeof is8MovesEnabled === "function" && is8MovesEnabled()) ? (basePokemon.moves ? basePokemon.moves.length : 4) : 4;
+	for (var i = 0; i < numMoves; i++) {
 		var m = basePokemon.moves[i];
 		if (!m || !m.name || m.name === "(No Move)") {
 			megaMoves.push(new calc.Move(gen, "(No Move)", { ability: megaAbility, item: megaItem, species: megaSpeciesName }));
@@ -166,7 +170,8 @@ function buildMegaSetObjFromBasePoke(basePoke, megaName) {
 		ivs[legacyStat] = (gen >= 3 && basePoke.ivs && typeof basePoke.ivs[legacyStat] !== "undefined") ? basePoke.ivs[legacyStat] : 31;
 	}
 	var moves = [];
-	for (var j = 0; j < 4; j++) {
+	var numMovesSet = (typeof is8MovesEnabled === "function" && is8MovesEnabled() && basePoke.moves) ? basePoke.moves.length : 4;
+	for (var j = 0; j < numMovesSet; j++) {
 		var moveName = basePoke.moves[j];
 		moves.push(moveName && moveName !== "(No Move)" ? moveName : "");
 	}
@@ -530,8 +535,10 @@ function getMoves(currentPoke, rows, offset) {
 		if (rows[x]) {
 			if (rows[x][0] == "-") {
 				movesFound = true;
-				var move = rows[x].substr(2, rows[x].length - 2).replace("[", "").replace("]", "").replace("  ", "");
-				moves.push(move);
+				var move = rows[x].substr(2, rows[x].length - 2).replace("[", "").replace("]", "").replace("  ", "").trim();
+				if (moves.length < 8) {
+					moves.push(move);
+				}
 			} else {
 				if (movesFound == true) {
 					break;

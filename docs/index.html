@@ -55,6 +55,7 @@
                     if (s.showMoveFilter === false) doc.classList.add('hide-feature-move-filter');
                     if (s.showMgbaSync === false) doc.classList.add('hide-feature-mgba-sync');
                     if (s.showHpFractions === false) doc.classList.add('hide-feature-hp-fractions');
+                    if (s.enable8Moves === true) doc.classList.add('enable-8-moves');
                 }
             } catch (e) {}
         })();
@@ -147,6 +148,13 @@
                     <span class="app-menu-toggle-track" aria-hidden="true"></span>
                 </span>
             </label>
+            <label class="app-menu-row app-menu-toggle-row">
+                <span class="app-menu-row-label">Enable 8 moveslots</span>
+                <span class="app-menu-toggle">
+                    <input type="checkbox" id="setting-toggle-8-moves" class="app-menu-toggle-input" role="switch" />
+                    <span class="app-menu-toggle-track" aria-hidden="true"></span>
+                </span>
+            </label>
         </div>
     </div>
     <span class="title-text">Pok&eacute;mon Null 1.2.4 Damage Calculator</span>
@@ -204,6 +212,26 @@
                 <label class="btn btn-xxxwide btn-bottom" for="resultMoveL4">Loading...</label>
                 <span id="resultDamageL4">??? - ???%</span>
             </div>
+            <div class="extra-moveslot hidden-moves">
+                <input class="result-move visually-hidden" type="radio" name="resultMove" id="resultMoveL5" aria-describedby="resultDamageL5" />
+                <label class="btn btn-xxxwide btn-mid" for="resultMoveL5">(No Move)</label>
+                <span id="resultDamageL5">??? - ???%</span>
+            </div>
+            <div class="extra-moveslot hidden-moves">
+                <input class="result-move visually-hidden" type="radio" name="resultMove" id="resultMoveL6" aria-describedby="resultDamageL6" />
+                <label class="btn btn-xxxwide btn-mid" for="resultMoveL6">(No Move)</label>
+                <span id="resultDamageL6">??? - ???%</span>
+            </div>
+            <div class="extra-moveslot hidden-moves">
+                <input class="result-move visually-hidden" type="radio" name="resultMove" id="resultMoveL7" aria-describedby="resultDamageL7" />
+                <label class="btn btn-xxxwide btn-mid" for="resultMoveL7">(No Move)</label>
+                <span id="resultDamageL7">??? - ???%</span>
+            </div>
+            <div class="extra-moveslot hidden-moves">
+                <input class="result-move visually-hidden" type="radio" name="resultMove" id="resultMoveL8" aria-describedby="resultDamageL8" />
+                <label class="btn btn-xxxwide btn-bottom" for="resultMoveL8">(No Move)</label>
+                <span id="resultDamageL8">??? - ???%</span>
+            </div>
         </div>
         <div aria-labelledby="resultHeaderR" class="move-result-subgroup" role="radiogroup">
             <div class="result-move-header"><span id="resultHeaderR">Pok&eacute;mon 2's Moves (select one to show detailed results)</span>
@@ -227,6 +255,26 @@
                 <input class="result-move visually-hidden" type="radio" name="resultMove" id="resultMoveR4" aria-describedby="resultDamageR4" />
                 <label class="btn btn-xxxwide btn-bottom" for="resultMoveR4">Loading...</label>
                 <span id="resultDamageR4">??? - ???%</span>
+            </div>
+            <div class="extra-moveslot hidden-moves">
+                <input class="result-move visually-hidden" type="radio" name="resultMove" id="resultMoveR5" aria-describedby="resultDamageR5" />
+                <label class="btn btn-xxxwide btn-mid" for="resultMoveR5">(No Move)</label>
+                <span id="resultDamageR5">??? - ???%</span>
+            </div>
+            <div class="extra-moveslot hidden-moves">
+                <input class="result-move visually-hidden" type="radio" name="resultMove" id="resultMoveR6" aria-describedby="resultDamageR6" />
+                <label class="btn btn-xxxwide btn-mid" for="resultMoveR6">(No Move)</label>
+                <span id="resultDamageR6">??? - ???%</span>
+            </div>
+            <div class="extra-moveslot hidden-moves">
+                <input class="result-move visually-hidden" type="radio" name="resultMove" id="resultMoveR7" aria-describedby="resultDamageR7" />
+                <label class="btn btn-xxxwide btn-mid" for="resultMoveR7">(No Move)</label>
+                <span id="resultDamageR7">??? - ???%</span>
+            </div>
+            <div class="extra-moveslot hidden-moves">
+                <input class="result-move visually-hidden" type="radio" name="resultMove" id="resultMoveR8" aria-describedby="resultDamageR8" />
+                <label class="btn btn-xxxwide btn-bottom" for="resultMoveR8">(No Move)</label>
+                <span id="resultDamageR8">??? - ???%</span>
             </div>
         </div>
     </div>
@@ -699,19 +747,20 @@
                         title="Use the corresponding Max Move?">Dynamax</label>
                         <br />
                     <div class="hp-fractions-container" aria-label="HP Threshold Fractions">
-                        <span class="hp-frac-item" title="1/16 (Leftovers, Toxic/Burn, Hail/Sandstorm, Grassy Terrain)"><span class="hp-frac-label">1/16:</span> <span class="hp-frac-val hp-frac-16">21</span></span>
+                        <span class="hp-frac-item hp-fraction-btn" role="button" tabindex="0" data-fraction="1/16" data-value="21" title="Click to deduct 21 HP (1/16 - Leftovers, Toxic/Burn, Hail/Sandstorm, Grassy Terrain)"><span class="hp-frac-label">1/16:</span> <span class="hp-frac-val hp-frac-16">21</span></span>
                         <span class="hp-frac-sep">|</span>
-                        <span class="hp-frac-item" title="1/10 (Life Orb recoil)"><span class="hp-frac-label">1/10:</span> <span class="hp-frac-val hp-frac-10">34</span></span>
+                        <span class="hp-frac-item hp-fraction-btn" role="button" tabindex="0" data-fraction="1/10" data-value="34" title="Click to deduct 34 HP (1/10 - Life Orb recoil)"><span class="hp-frac-label">1/10:</span> <span class="hp-frac-val hp-frac-10">34</span></span>
                         <span class="hp-frac-sep">|</span>
-                        <span class="hp-frac-item" title="1/8 (Stealth Rock neutral, Poison, Black Sludge)"><span class="hp-frac-label">1/8:</span> <span class="hp-frac-val hp-frac-8">42</span></span>
+                        <span class="hp-frac-item hp-fraction-btn" role="button" tabindex="0" data-fraction="1/8" data-value="42" title="Click to deduct 42 HP (1/8 - Stealth Rock neutral, Poison, Black Sludge)"><span class="hp-frac-label">1/8:</span> <span class="hp-frac-val hp-frac-8">42</span></span>
                         <span class="hp-frac-sep">|</span>
-                        <span class="hp-frac-item" title="1/6 (Rocky Helmet)"><span class="hp-frac-label">1/6:</span> <span class="hp-frac-val hp-frac-6">56</span></span>
+                        <span class="hp-frac-item hp-fraction-btn" role="button" tabindex="0" data-fraction="1/6" data-value="56" title="Click to deduct 56 HP (1/6 - Rocky Helmet)"><span class="hp-frac-label">1/6:</span> <span class="hp-frac-val hp-frac-6">56</span></span>
                         <span class="hp-frac-sep">|</span>
-                        <span class="hp-frac-item" title="1/4 (Substitute, Sitrus Berry)"><span class="hp-frac-label">1/4:</span> <span class="hp-frac-val hp-frac-4">85</span></span>
+                        <span class="hp-frac-item hp-fraction-btn" role="button" tabindex="0" data-fraction="1/4" data-value="85" title="Click to deduct 85 HP (1/4 - Substitute, Sitrus Berry)"><span class="hp-frac-label">1/4:</span> <span class="hp-frac-val hp-frac-4">85</span></span>
                         <span class="hp-frac-sep">|</span>
-                        <span class="hp-frac-item" title="1/3 (Regenerator)"><span class="hp-frac-label">1/3:</span> <span class="hp-frac-val hp-frac-3">113</span></span>
+                        <span class="hp-frac-item hp-fraction-btn" role="button" tabindex="0" data-fraction="1/3" data-value="113" title="Click to deduct 113 HP (1/3 - Regenerator)"><span class="hp-frac-label">1/3:</span> <span class="hp-frac-val hp-frac-3">113</span></span>
                         <span class="hp-frac-sep">|</span>
-                        <span class="hp-frac-item" title="1/2 (Belly Drum, Recover, Roost, Pinch Berry)"><span class="hp-frac-label">1/2:</span> <span class="hp-frac-val hp-frac-2">170</span></span>
+                        <span class="hp-frac-item hp-fraction-btn" role="button" tabindex="0" data-fraction="1/2" data-value="170" title="Click to deduct 170 HP (1/2 - Belly Drum, Recover, Roost, Pinch Berry)"><span class="hp-frac-label">1/2:</span> <span class="hp-frac-val hp-frac-2">170</span></span>
+                        <button type="button" class="hp-fraction-mode-btn mode-minus" data-mode="minus" title="Mode actuel : Soustraction (-). Cliquer pour passer en Addition (+)">-</button>
                     </div>
                     Health <div class="hpbar"></div>
                 </div>
@@ -831,6 +880,142 @@
                     <label class="btn crit-btn" for="critL4" title="Force this attack to be a critical hit?">Crit</label>
                     <input aria-describedby="zMoveInstruction" class="move-z calc-trigger visually-hidden" type="checkbox" id="zL4"/>
                     <label class="btn z-btn gen-specific g7 g8 g9" for="zL4" title="Make this attack a Z-move?">Z</label>
+                    <select class="move-hits calc-trigger hide">
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                    </select>
+                    <select class="stat-drops calc-trigger hide" title="How many times was this move used in a row?">
+                        <option value="1">Once</option>
+                        <option value="2">Twice</option>
+                        <option value="3">3 times</option>
+                        <option value="4">4 times</option>
+                        <option value="5">5 times</option>
+                    </select>
+                    <select class="metronome calc-trigger hide" title="How many times was this move successfully and consecutively used while holding Metronome before this turn?">
+                        <option value="0">0</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                    </select>
+                </div>
+                <div class="move5 i-f-move extra-moveslot hidden-moves">
+                    <select class="move-selector calc-trigger small-select"></select>
+                    <input class="move-bp calc-trigger" value="0" />
+                    <select class="move-type calc-trigger"></select>
+                    <select class="move-cat calc-trigger gen-specific g4 g5 g6 g7 g8 g9">
+                        <option value="Physical">Phys.</option>
+                        <option value="Special">Spec.</option>
+                    </select>
+                    <input aria-describedby="criticalHitInstruction" class="move-crit calc-trigger visually-hidden" type="checkbox" id="critL5" />
+                    <label class="btn crit-btn" for="critL5" title="Force this attack to be a critical hit?">Crit</label>
+                    <input aria-describedby="zMoveInstruction" class="move-z calc-trigger visually-hidden" type="checkbox" id="zL5"/>
+                    <label class="btn z-btn gen-specific g7 g8 g9" for="zL5" title="Make this attack a Z-move?">Z</label>
+                    <select class="move-hits calc-trigger hide">
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                    </select>
+                    <select class="stat-drops calc-trigger hide" title="How many times was this move used in a row?">
+                        <option value="1">Once</option>
+                        <option value="2">Twice</option>
+                        <option value="3">3 times</option>
+                        <option value="4">4 times</option>
+                        <option value="5">5 times</option>
+                    </select>
+                    <select class="metronome calc-trigger hide" title="How many times was this move successfully and consecutively used while holding Metronome before this turn?">
+                        <option value="0">0</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                    </select>
+                </div>
+                <div class="move6 i-f-move extra-moveslot hidden-moves">
+                    <select class="move-selector calc-trigger small-select"></select>
+                    <input class="move-bp calc-trigger" value="0" />
+                    <select class="move-type calc-trigger"></select>
+                    <select class="move-cat calc-trigger gen-specific g4 g5 g6 g7 g8 g9">
+                        <option value="Physical">Phys.</option>
+                        <option value="Special">Spec.</option>
+                    </select>
+                    <input aria-describedby="criticalHitInstruction" class="move-crit calc-trigger visually-hidden" type="checkbox" id="critL6" />
+                    <label class="btn crit-btn" for="critL6" title="Force this attack to be a critical hit?">Crit</label>
+                    <input aria-describedby="zMoveInstruction" class="move-z calc-trigger visually-hidden" type="checkbox" id="zL6"/>
+                    <label class="btn z-btn gen-specific g7 g8 g9" for="zL6" title="Make this attack a Z-move?">Z</label>
+                    <select class="move-hits calc-trigger hide">
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                    </select>
+                    <select class="stat-drops calc-trigger hide" title="How many times was this move used in a row?">
+                        <option value="1">Once</option>
+                        <option value="2">Twice</option>
+                        <option value="3">3 times</option>
+                        <option value="4">4 times</option>
+                        <option value="5">5 times</option>
+                    </select>
+                    <select class="metronome calc-trigger hide" title="How many times was this move successfully and consecutively used while holding Metronome before this turn?">
+                        <option value="0">0</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                    </select>
+                </div>
+                <div class="move7 i-f-move extra-moveslot hidden-moves">
+                    <select class="move-selector calc-trigger small-select"></select>
+                    <input class="move-bp calc-trigger" value="0" />
+                    <select class="move-type calc-trigger"></select>
+                    <select class="move-cat calc-trigger gen-specific g4 g5 g6 g7 g8 g9">
+                        <option value="Physical">Phys.</option>
+                        <option value="Special">Spec.</option>
+                    </select>
+                    <input aria-describedby="criticalHitInstruction" class="move-crit calc-trigger visually-hidden" type="checkbox" id="critL7" />
+                    <label class="btn crit-btn" for="critL7" title="Force this attack to be a critical hit?">Crit</label>
+                    <input aria-describedby="zMoveInstruction" class="move-z calc-trigger visually-hidden" type="checkbox" id="zL7"/>
+                    <label class="btn z-btn gen-specific g7 g8 g9" for="zL7" title="Make this attack a Z-move?">Z</label>
+                    <select class="move-hits calc-trigger hide">
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                    </select>
+                    <select class="stat-drops calc-trigger hide" title="How many times was this move used in a row?">
+                        <option value="1">Once</option>
+                        <option value="2">Twice</option>
+                        <option value="3">3 times</option>
+                        <option value="4">4 times</option>
+                        <option value="5">5 times</option>
+                    </select>
+                    <select class="metronome calc-trigger hide" title="How many times was this move successfully and consecutively used while holding Metronome before this turn?">
+                        <option value="0">0</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                    </select>
+                </div>
+                <div class="move8 i-f-move extra-moveslot hidden-moves">
+                    <select class="move-selector calc-trigger small-select"></select>
+                    <input class="move-bp calc-trigger" value="0" />
+                    <select class="move-type calc-trigger"></select>
+                    <select class="move-cat calc-trigger gen-specific g4 g5 g6 g7 g8 g9">
+                        <option value="Physical">Phys.</option>
+                        <option value="Special">Spec.</option>
+                    </select>
+                    <input aria-describedby="criticalHitInstruction" class="move-crit calc-trigger visually-hidden" type="checkbox" id="critL8" />
+                    <label class="btn crit-btn" for="critL8" title="Force this attack to be a critical hit?">Crit</label>
+                    <input aria-describedby="zMoveInstruction" class="move-z calc-trigger visually-hidden" type="checkbox" id="zL8"/>
+                    <label class="btn z-btn gen-specific g7 g8 g9" for="zL8" title="Make this attack a Z-move?">Z</label>
                     <select class="move-hits calc-trigger hide">
                         <option value="2">2</option>
                         <option value="3">3</option>
@@ -1789,19 +1974,20 @@
                         title="Use the corresponding Max Move?">Dynamax</label>
                         <br />
                     <div class="hp-fractions-container" aria-label="HP Threshold Fractions">
-                        <span class="hp-frac-item" title="1/16 (Leftovers, Toxic/Burn, Hail/Sandstorm, Grassy Terrain)"><span class="hp-frac-label">1/16:</span> <span class="hp-frac-val hp-frac-16">21</span></span>
+                        <span class="hp-frac-item hp-fraction-btn" role="button" tabindex="0" data-fraction="1/16" data-value="21" title="Click to deduct 21 HP (1/16 - Leftovers, Toxic/Burn, Hail/Sandstorm, Grassy Terrain)"><span class="hp-frac-label">1/16:</span> <span class="hp-frac-val hp-frac-16">21</span></span>
                         <span class="hp-frac-sep">|</span>
-                        <span class="hp-frac-item" title="1/10 (Life Orb recoil)"><span class="hp-frac-label">1/10:</span> <span class="hp-frac-val hp-frac-10">34</span></span>
+                        <span class="hp-frac-item hp-fraction-btn" role="button" tabindex="0" data-fraction="1/10" data-value="34" title="Click to deduct 34 HP (1/10 - Life Orb recoil)"><span class="hp-frac-label">1/10:</span> <span class="hp-frac-val hp-frac-10">34</span></span>
                         <span class="hp-frac-sep">|</span>
-                        <span class="hp-frac-item" title="1/8 (Stealth Rock neutral, Poison base, Black Sludge, Burn)"><span class="hp-frac-label">1/8:</span> <span class="hp-frac-val hp-frac-8">42</span></span>
+                        <span class="hp-frac-item hp-fraction-btn" role="button" tabindex="0" data-fraction="1/8" data-value="42" title="Click to deduct 42 HP (1/8 - Stealth Rock neutral, Poison base, Black Sludge, Burn)"><span class="hp-frac-label">1/8:</span> <span class="hp-frac-val hp-frac-8">42</span></span>
                         <span class="hp-frac-sep">|</span>
-                        <span class="hp-frac-item" title="1/6 (Rocky Helmet)"><span class="hp-frac-label">1/6:</span> <span class="hp-frac-val hp-frac-6">56</span></span>
+                        <span class="hp-frac-item hp-fraction-btn" role="button" tabindex="0" data-fraction="1/6" data-value="56" title="Click to deduct 56 HP (1/6 - Rocky Helmet)"><span class="hp-frac-label">1/6:</span> <span class="hp-frac-val hp-frac-6">56</span></span>
                         <span class="hp-frac-sep">|</span>
-                        <span class="hp-frac-item" title="1/4 (Substitute, Sitrus Berry)"><span class="hp-frac-label">1/4:</span> <span class="hp-frac-val hp-frac-4">85</span></span>
+                        <span class="hp-frac-item hp-fraction-btn" role="button" tabindex="0" data-fraction="1/4" data-value="85" title="Click to deduct 85 HP (1/4 - Substitute, Sitrus Berry)"><span class="hp-frac-label">1/4:</span> <span class="hp-frac-val hp-frac-4">85</span></span>
                         <span class="hp-frac-sep">|</span>
-                        <span class="hp-frac-item" title="1/3 (Regenerator)"><span class="hp-frac-label">1/3:</span> <span class="hp-frac-val hp-frac-3">113</span></span>
+                        <span class="hp-frac-item hp-fraction-btn" role="button" tabindex="0" data-fraction="1/3" data-value="113" title="Click to deduct 113 HP (1/3 - Regenerator)"><span class="hp-frac-label">1/3:</span> <span class="hp-frac-val hp-frac-3">113</span></span>
                         <span class="hp-frac-sep">|</span>
-                        <span class="hp-frac-item" title="1/2 (Belly Drum, Recover, Roost), Pinch Berry"><span class="hp-frac-label">1/2:</span> <span class="hp-frac-val hp-frac-2">170</span></span>
+                        <span class="hp-frac-item hp-fraction-btn" role="button" tabindex="0" data-fraction="1/2" data-value="170" title="Click to deduct 170 HP (1/2 - Belly Drum, Recover, Roost, Pinch Berry)"><span class="hp-frac-label">1/2:</span> <span class="hp-frac-val hp-frac-2">170</span></span>
+                        <button type="button" class="hp-fraction-mode-btn mode-minus" data-mode="minus" title="Mode actuel : Soustraction (-). Cliquer pour passer en Addition (+)">-</button>
                     </div>
                     Health <div class="hpbar"></div>
                 </div>
@@ -1941,6 +2127,142 @@
                         <option value="5">5</option>
                     </select>
                 </div>
+                <div class="move5 i-f-o-move extra-moveslot hidden-moves">
+                    <select class="move-selector calc-trigger small-select"></select>
+                    <input class="move-bp calc-trigger" value="0" />
+                    <select class="move-type calc-trigger"></select>
+                    <select class="move-cat calc-trigger gen-specific g4 g5 g6 g7 g8 g9">
+                        <option value="Physical">Phys.</option>
+                        <option value="Special">Spec.</option>
+                    </select>
+                    <input aria-describedby="criticalHitInstruction" class="move-crit calc-trigger visually-hidden" type="checkbox" id="critR5" />
+                    <label class="btn crit-btn" for="critR5" title="Force this attack to be a critical hit?">Crit</label>
+                    <input aria-describedby="zMoveInstruction" class="move-z calc-trigger visually-hidden" type="checkbox" id="zR5"/>
+                    <label class="btn z-btn gen-specific g7 g8 g9" for="zR5" title="Make this attack a Z-move?">Z</label>
+                    <select class="move-hits calc-trigger hide">
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                    </select>
+                    <select class="stat-drops calc-trigger hide" title="How many times was this move used in a row?">
+                        <option value="1">Once</option>
+                        <option value="2">Twice</option>
+                        <option value="3">3 times</option>
+                        <option value="4">4 times</option>
+                        <option value="5">5 times</option>
+                    </select>
+                    <select class="metronome calc-trigger hide" title="How many times was this move successfully and consecutively used while holding Metronome before this turn?">
+                        <option value="0">0</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                    </select>
+                </div>
+                <div class="move6 i-f-o-move extra-moveslot hidden-moves">
+                    <select class="move-selector calc-trigger small-select"></select>
+                    <input class="move-bp calc-trigger" value="0" />
+                    <select class="move-type calc-trigger"></select>
+                    <select class="move-cat calc-trigger gen-specific g4 g5 g6 g7 g8 g9">
+                        <option value="Physical">Phys.</option>
+                        <option value="Special">Spec.</option>
+                    </select>
+                    <input aria-describedby="criticalHitInstruction" class="move-crit calc-trigger visually-hidden" type="checkbox" id="critR6" />
+                    <label class="btn crit-btn" for="critR6" title="Force this attack to be a critical hit?">Crit</label>
+                    <input aria-describedby="zMoveInstruction" class="move-z calc-trigger visually-hidden" type="checkbox" id="zR6"/>
+                    <label class="btn z-btn gen-specific g7 g8 g9" for="zR6" title="Make this attack a Z-move?">Z</label>
+                    <select class="move-hits calc-trigger hide">
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                    </select>
+                    <select class="stat-drops calc-trigger hide" title="How many times was this move used in a row?">
+                        <option value="1">Once</option>
+                        <option value="2">Twice</option>
+                        <option value="3">3 times</option>
+                        <option value="4">4 times</option>
+                        <option value="5">5 times</option>
+                    </select>
+                    <select class="metronome calc-trigger hide" title="How many times was this move successfully and consecutively used while holding Metronome before this turn?">
+                        <option value="0">0</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                    </select>
+                </div>
+                <div class="move7 i-f-o-move extra-moveslot hidden-moves">
+                    <select class="move-selector calc-trigger small-select"></select>
+                    <input class="move-bp calc-trigger" value="0" />
+                    <select class="move-type calc-trigger"></select>
+                    <select class="move-cat calc-trigger gen-specific g4 g5 g6 g7 g8 g9">
+                        <option value="Physical">Phys.</option>
+                        <option value="Special">Spec.</option>
+                    </select>
+                    <input aria-describedby="criticalHitInstruction" class="move-crit calc-trigger visually-hidden" type="checkbox" id="critR7" />
+                    <label class="btn crit-btn" for="critR7" title="Force this attack to be a critical hit?">Crit</label>
+                    <input aria-describedby="zMoveInstruction" class="move-z calc-trigger visually-hidden" type="checkbox" id="zR7"/>
+                    <label class="btn z-btn gen-specific g7 g8 g9" for="zR7" title="Make this attack a Z-move?">Z</label>
+                    <select class="move-hits calc-trigger hide">
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                    </select>
+                    <select class="stat-drops calc-trigger hide" title="How many times was this move used in a row?">
+                        <option value="1">Once</option>
+                        <option value="2">Twice</option>
+                        <option value="3">3 times</option>
+                        <option value="4">4 times</option>
+                        <option value="5">5 times</option>
+                    </select>
+                    <select class="metronome calc-trigger hide" title="How many times was this move successfully and consecutively used while holding Metronome before this turn?">
+                        <option value="0">0</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                    </select>
+                </div>
+                <div class="move8 i-f-o-move extra-moveslot hidden-moves">
+                    <select class="move-selector calc-trigger small-select"></select>
+                    <input class="move-bp calc-trigger" value="0" />
+                    <select class="move-type calc-trigger"></select>
+                    <select class="move-cat calc-trigger gen-specific g4 g5 g6 g7 g8 g9">
+                        <option value="Physical">Phys.</option>
+                        <option value="Special">Spec.</option>
+                    </select>
+                    <input aria-describedby="criticalHitInstruction" class="move-crit calc-trigger visually-hidden" type="checkbox" id="critR8" />
+                    <label class="btn crit-btn" for="critR8" title="Force this attack to be a critical hit?">Crit</label>
+                    <input aria-describedby="zMoveInstruction" class="move-z calc-trigger visually-hidden" type="checkbox" id="zR8"/>
+                    <label class="btn z-btn gen-specific g7 g8 g9" for="zR8" title="Make this attack a Z-move?">Z</label>
+                    <select class="move-hits calc-trigger hide">
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                    </select>
+                    <select class="stat-drops calc-trigger hide" title="How many times was this move used in a row?">
+                        <option value="1">Once</option>
+                        <option value="2">Twice</option>
+                        <option value="3">3 times</option>
+                        <option value="4">4 times</option>
+                        <option value="5">5 times</option>
+                    </select>
+                    <select class="metronome calc-trigger hide" title="How many times was this move successfully and consecutively used while holding Metronome before this turn?">
+                        <option value="0">0</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                    </select>
+                </div>
             </fieldset>
             <fieldset class="opposing-team-box" aria-label="Opposing team" role="region">
                 <div class="opposing-teams-wrapper">
@@ -2028,9 +2350,9 @@
     <script type="text/javascript" src="./calc/adaptable.js?"></script>
     <script type="text/javascript" src="./calc/index.js?"></script>
     <script type="text/javascript" src="./js/data/icons_manifest.js?"></script>
-    <script type="text/javascript" src="./js/shared_controls.js?"></script>
+    <script type="text/javascript" src="./js/shared_controls.js?v=8moves"></script>
     <script type="text/javascript" src="./js/icons_preload.js?"></script>
-    <script type="text/javascript" src="./js/index_randoms_controls.js?"></script>
+    <script type="text/javascript" src="./js/index_randoms_controls.js?v=8moves"></script>
     <script type="text/javascript" src="./js/moveset_import.js?"></script>
     <script type="text/javascript">
         (function () {

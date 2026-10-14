@@ -314,6 +314,18 @@ div.info-group.info-selectors.i-f-o-stats .info-selector-row select {
 .hp-fractions-container {
     color: #9aa0a6;
 }
+.hp-fractions-container .hp-frac-item:hover,
+.hp-fractions-container .hp-fraction-btn:hover {
+    background-color: rgba(255, 255, 255, 0.12);
+}
+.hp-fractions-container .hp-frac-item:active,
+.hp-fractions-container .hp-fraction-btn:active {
+    background-color: rgba(255, 255, 255, 0.22);
+}
+.hp-fractions-container .hp-frac-item:focus-visible,
+.hp-fractions-container .hp-fraction-btn:focus-visible {
+    outline-color: #8ab4f8;
+}
 .hp-fractions-container .hp-frac-label {
     color: #8ab4f8;
 }
@@ -322,6 +334,34 @@ div.info-group.info-selectors.i-f-o-stats .info-selector-row select {
 }
 .hp-fractions-container .hp-frac-sep {
     color: #555555;
+}
+/* HP Fraction Mode Toggle Button Dark Theme */
+.hp-fraction-mode-btn:focus-visible {
+    outline-color: #8ab4f8;
+}
+.hp-fraction-mode-btn.mode-minus,
+.hp-fraction-mode-btn[data-mode="minus"] {
+    background-color: rgba(234, 67, 53, 0.2);
+    color: #f28b82;
+    border-color: rgba(234, 67, 53, 0.5);
+}
+.hp-fraction-mode-btn.mode-minus:hover,
+.hp-fraction-mode-btn[data-mode="minus"]:hover {
+    background-color: rgba(234, 67, 53, 0.35);
+    border-color: #f28b82;
+    color: #ffffff;
+}
+.hp-fraction-mode-btn.mode-plus,
+.hp-fraction-mode-btn[data-mode="plus"] {
+    background-color: rgba(52, 168, 83, 0.22);
+    color: #81c995;
+    border-color: rgba(52, 168, 83, 0.5);
+}
+.hp-fraction-mode-btn.mode-plus:hover,
+.hp-fraction-mode-btn[data-mode="plus"]:hover {
+    background-color: rgba(52, 168, 83, 0.38);
+    border-color: #81c995;
+    color: #ffffff;
 }
 
 /* ---- Move Categories Modal — dark theme overrides ----------------------- */
