@@ -4074,18 +4074,20 @@ function getNullCalcSettings() {
 		if (raw) {
 			var parsed = JSON.parse(raw);
 			return {
-				showMoveFilter: parsed.showMoveFilter !== false,
-				showMgbaSync: parsed.showMgbaSync !== false,
+				showMoveFilter:  parsed.showMoveFilter  !== false,
+				showMgbaSync:    parsed.showMgbaSync    !== false,
 				showHpFractions: parsed.showHpFractions !== false,
-				enable8Moves: parsed.enable8Moves === true
+				enable8Moves:    parsed.enable8Moves    === true,
+				showOverlapRoll: parsed.showOverlapRoll === true
 			};
 		}
 	} catch (e) {}
 	return {
-		showMoveFilter: true,
-		showMgbaSync: true,
+		showMoveFilter:  true,
+		showMgbaSync:    true,
 		showHpFractions: true,
-		enable8Moves: false
+		enable8Moves:    false,
+		showOverlapRoll: false
 	};
 }
 

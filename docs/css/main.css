@@ -414,7 +414,7 @@ fieldset.opposing-team-box:has(#trainer-poks-remaining .trainer-pok-list-opposin
     gap: 0;
 }
 .app-header-tab {
-    min-width: 7.5em;
+    min-width: 5.5em;
     /* Use base `.btn` negative margins to visually connect. */
     margin-right: 0;
     display: inline-flex;
@@ -422,7 +422,10 @@ fieldset.opposing-team-box:has(#trainer-poks-remaining .trainer-pok-list-opposin
     justify-content: center;
     align-items: center;
     text-align: center;
-    line-height: 1.1;
+    line-height: 1.05;
+    font-size: 0.82em;
+    padding: 1px 7px;
+    height: 27px;
     box-sizing: border-box;
 }
 #header-categories-button {
@@ -431,8 +434,8 @@ fieldset.opposing-team-box:has(#trainer-poks-remaining .trainer-pok-list-opposin
     justify-content: center;
     align-items: center;
     text-align: center;
-    line-height: 1.1;
-    padding: 2px 8px;
+    line-height: 1.05;
+    padding: 1px 7px;
     width: auto;
 }
 .app-header-tabs .app-header-tab {

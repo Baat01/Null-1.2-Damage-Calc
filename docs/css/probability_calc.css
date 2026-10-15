@@ -1,0 +1,432 @@
+/* =============================================================================
+   probability_calc.css
+   Styles for: Proba Calc header tab, [+] add-to-proba button,
+               overlap roll probability badges, Probability Calculator modal.
+   Light & Dark mode support via [data-theme] attribute on <html>.
+   =========================================================================== */
+
+/* ---------------------------------------------------------------------------
+   Range Calculator Header Tab Button
+   Same visual treatment as .app-header-tab siblings
+   --------------------------------------------------------------------------- */
+#header-proba-button {
+    line-height: 1.05;
+    text-align: center;
+}
+
+/* ---------------------------------------------------------------------------
+   Overlap probability inline text appended to move damage spans
+   Matches the font-size, weight, and color of the standard damage percent text
+   Zero-probability moves get nothing appended (handled in JS).
+   --------------------------------------------------------------------------- */
+.overlap-proba-badge {
+    /* No background/border/padding — pure inline text continuation */
+    display: inline;
+    font-size: 1em;   /* same as surrounding damage span */
+    font-weight: inherit;
+    letter-spacing: inherit;
+    color: inherit;   /* inherits the damage span color — stays consistent */
+    white-space: nowrap;
+}
+
+/* Optional: give the separator a subtle dim to separate it visually */
+.overlap-proba-badge::before {
+    content: '';
+}
+
+[data-theme="light"] .overlap-proba-badge {
+    color: inherit;
+}
+
+/* ---------------------------------------------------------------------------
+   [+] Add to Proba Calc button (next to "Possible damage amounts")
+   --------------------------------------------------------------------------- */
+.btn-add-to-proba,
+#btn-add-to-proba {
+    font-family: inherit !important;
+    font-size: 0.85em !important;
+    font-weight: 600 !important;
+    line-height: 1 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 2px 6px !important;
+    margin-left: 6px !important;
+    vertical-align: middle !important;
+    cursor: pointer !important;
+    border-radius: 3px !important;
+    border: 1px solid rgba(128, 128, 128, 0.35) !important;
+    background: rgba(128, 128, 128, 0.15) !important;
+    color: inherit !important;
+    transition: all 0.15s ease-in-out !important;
+    user-select: none !important;
+}
+
+/* Hover & Active States */
+.btn-add-to-proba:hover,
+#btn-add-to-proba:hover {
+    background: rgba(40, 167, 69, 0.25) !important;
+    border-color: rgba(40, 167, 69, 0.6) !important;
+    color: #28a745 !important;
+}
+
+.btn-add-to-proba:active,
+#btn-add-to-proba:active {
+    transform: scale(0.94) !important;
+}
+
+/* Flash feedback state when rolls are added */
+.btn-add-to-proba.added-flash,
+#btn-add-to-proba.added-flash,
+.btn-add-to-proba.proba-added,
+#btn-add-to-proba.proba-added {
+    background: #28a745 !important;
+    border-color: #28a745 !important;
+    color: #fff !important;
+}
+
+/* ---------------------------------------------------------------------------
+   Modal overlay backdrop
+   --------------------------------------------------------------------------- */
+#proba-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 9000;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(2px);
+    align-items: center;
+    justify-content: center;
+}
+#proba-modal-overlay.proba-open {
+    display: flex;
+}
+
+/* ---------------------------------------------------------------------------
+   Modal container
+   --------------------------------------------------------------------------- */
+#proba-modal {
+    position: relative;
+    width: min(560px, 96vw);
+    max-height: 90vh;
+    overflow-y: auto;
+    border-radius: 12px;
+    padding: 24px 24px 20px;
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.3);
+    animation: probaSlideIn 0.22s cubic-bezier(0.34, 1.3, 0.64, 1) both;
+
+    /* Default (dark) */
+    background: #1e2330;
+    color: #e4e4e4;
+    border: 1px solid rgba(255, 255, 255, 0.10);
+}
+
+[data-theme="light"] #proba-modal {
+    background: #f5f7fa;
+    color: #1a1a2e;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.18), 0 2px 8px rgba(0, 0, 0, 0.10);
+}
+
+[data-theme="original"] #proba-modal {
+    background: #222222;
+    color: #e4e4e4;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+@keyframes probaSlideIn {
+    from { opacity: 0; transform: translateY(-18px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0)     scale(1); }
+}
+
+/* ---------------------------------------------------------------------------
+   Modal header
+   --------------------------------------------------------------------------- */
+.proba-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+}
+
+.proba-modal-title {
+    font-size: 1.15em;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    color: #7bbfff;
+}
+
+[data-theme="light"] .proba-modal-title {
+    color: #1464b4;
+}
+
+#proba-modal-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 255, 255, 0.07);
+    color: #aaa;
+    font-size: 1.1em;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    flex-shrink: 0;
+}
+#proba-modal-close:hover {
+    background: rgba(255, 80, 80, 0.22);
+    color: #ff6060;
+}
+
+[data-theme="light"] #proba-modal-close {
+    background: rgba(0, 0, 0, 0.06);
+    color: #666;
+}
+[data-theme="light"] #proba-modal-close:hover {
+    background: rgba(200, 0, 0, 0.12);
+    color: #c00;
+}
+
+/* ---------------------------------------------------------------------------
+   HP input row
+   --------------------------------------------------------------------------- */
+.proba-hp-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+.proba-hp-row label {
+    font-size: 0.9em;
+    font-weight: 600;
+    color: #aaa;
+    white-space: nowrap;
+    min-width: 90px;
+}
+[data-theme="light"] .proba-hp-row label {
+    color: #555;
+}
+
+#proba-hp-input {
+    width: 90px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.07);
+    color: #e4e4e4;
+    font-size: 0.95em;
+    text-align: center;
+    transition: border-color 0.15s;
+}
+#proba-hp-input:focus {
+    outline: none;
+    border-color: #4a90d9;
+}
+[data-theme="light"] #proba-hp-input {
+    border: 1px solid #ccc;
+    background: #fff;
+    color: #1a1a2e;
+}
+[data-theme="light"] #proba-hp-input:focus {
+    border-color: #1464b4;
+}
+
+/* ---------------------------------------------------------------------------
+   Move rows list
+   --------------------------------------------------------------------------- */
+#proba-moves-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.proba-move-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 7px 10px;
+    transition: border-color 0.15s;
+}
+.proba-move-row:hover {
+    border-color: rgba(74, 144, 217, 0.35);
+}
+
+[data-theme="light"] .proba-move-row {
+    background: rgba(0, 0, 0, 0.03);
+    border-color: rgba(0, 0, 0, 0.10);
+}
+[data-theme="light"] .proba-move-row:hover {
+    border-color: rgba(20, 100, 180, 0.30);
+}
+
+.proba-move-label {
+    font-size: 0.82em;
+    font-weight: 700;
+    color: #7bbfff;
+    white-space: nowrap;
+    min-width: 52px;
+}
+[data-theme="light"] .proba-move-label {
+    color: #1464b4;
+}
+
+.proba-move-name {
+    font-size: 0.82em;
+    color: #aaa;
+    min-width: 60px;
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+[data-theme="light"] .proba-move-name {
+    color: #555;
+}
+
+.proba-rolls-input {
+    flex: 1;
+    min-width: 0;
+    padding: 4px 8px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.06);
+    color: #e4e4e4;
+    font-size: 0.82em;
+    font-family: 'Ubuntu Mono', monospace, monospace;
+    transition: border-color 0.15s;
+}
+.proba-rolls-input:focus {
+    outline: none;
+    border-color: #4a90d9;
+}
+[data-theme="light"] .proba-rolls-input {
+    border: 1px solid #ccc;
+    background: #fff;
+    color: #1a1a2e;
+}
+[data-theme="light"] .proba-rolls-input:focus {
+    border-color: #1464b4;
+}
+
+.proba-move-delete {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 80, 80, 0.12);
+    color: #ff6060;
+    font-size: 0.85em;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.15s;
+}
+.proba-move-delete:hover {
+    background: rgba(255, 80, 80, 0.30);
+}
+
+/* ---------------------------------------------------------------------------
+   Add move button
+   --------------------------------------------------------------------------- */
+#proba-add-row-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 14px;
+    border-radius: 7px;
+    border: 1px dashed rgba(74, 144, 217, 0.45);
+    background: transparent;
+    color: #4a90d9;
+    font-size: 0.85em;
+    font-weight: 600;
+    cursor: pointer;
+    margin-bottom: 16px;
+    transition: background 0.15s, border-color 0.15s;
+    width: 100%;
+    justify-content: center;
+}
+#proba-add-row-btn:hover {
+    background: rgba(74, 144, 217, 0.12);
+    border-color: rgba(74, 144, 217, 0.7);
+}
+#proba-add-row-btn:disabled {
+    opacity: 0.38;
+    cursor: not-allowed;
+}
+
+[data-theme="light"] #proba-add-row-btn {
+    color: #1464b4;
+    border-color: rgba(20, 100, 180, 0.40);
+}
+[data-theme="light"] #proba-add-row-btn:hover {
+    background: rgba(20, 100, 180, 0.08);
+}
+
+/* ---------------------------------------------------------------------------
+   Result output area
+   --------------------------------------------------------------------------- */
+.proba-result-area {
+    background: rgba(74, 144, 217, 0.08);
+    border: 1px solid rgba(74, 144, 217, 0.22);
+    border-radius: 8px;
+    padding: 10px 14px;
+    text-align: center;
+    min-height: 38px;
+    color: #7bbfff;
+    transition: background 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+.proba-result-main {
+    font-size: 1.05em;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+.proba-result-frac {
+    font-size: 0.88em;
+    font-weight: 500;
+    opacity: 0.80;
+    letter-spacing: 0.01em;
+}
+.proba-result-area.proba-result--ready {
+    background: rgba(50, 200, 100, 0.10);
+    border-color: rgba(50, 200, 100, 0.30);
+    color: #32c864;
+}
+.proba-result-area.proba-result--zero {
+    background: rgba(220, 80, 80, 0.10);
+    border-color: rgba(220, 80, 80, 0.25);
+    color: #e06060;
+}
+.proba-result-placeholder {
+    color: #555;
+    font-size: 0.88em;
+    font-weight: 400;
+}
+
+[data-theme="light"] .proba-result-area {
+    background: rgba(20, 100, 180, 0.06);
+    border-color: rgba(20, 100, 180, 0.20);
+    color: #1464b4;
+}
+[data-theme="light"] .proba-result-area.proba-result--ready {
+    background: rgba(10, 140, 50, 0.08);
+    border-color: rgba(10, 140, 50, 0.25);
+    color: #0a7832;
+}
+[data-theme="light"] .proba-result-area.proba-result--zero {
+    background: rgba(180, 20, 20, 0.07);
+    border-color: rgba(180, 20, 20, 0.20);
+    color: #9c1414;
+}
