@@ -264,16 +264,19 @@
      * ====================================================================== */
 
     /**
-     * computeMultiRollKillProba(rollArrays, hp)
+     * computeMultiRollThresholdProba(rollArrays, initialHP, minRemainingHP)
      *
-     * Mathematically identical to Naiyo proba_2roll...proba_7roll but uses
-     * DP convolution to avoid O(16^7) browser-freezing iteration.
+     * Computes the compound probability distribution across 2-7 moves.
+     * Supports both standard KO threshold and Target Remaining HP threshold.
      */
-    function computeMultiRollKillProba(rollArrays, hp) {
+    function computeMultiRollThresholdProba(rollArrays, initialHP, minRemainingHP) {
         var k = rollArrays.length;
         if (k < 2 || k > 7) {
-            throw new Error('computeMultiRollKillProba supports 2-7 moves, got ' + k);
+            throw new Error('computeMultiRollThresholdProba supports 2-7 moves, got ' + k);
         }
+
+        var rem = (minRemainingHP !== undefined && minRemainingHP !== null) ? +minRemainingHP : 0;
+        if (isNaN(rem) || rem < 0) rem = 0;
 
         var dp = {};
         dp['0'] = 1;
@@ -297,13 +300,49 @@
             dp = next;
         }
 
+        var maxAllowedDamage = initialHP - rem;
         var killCount = 0;
+        var surviveCount = 0;
         var keys = Object.keys(dp);
+
         for (var ki = 0; ki < keys.length; ki++) {
-            if (+keys[ki] >= hp) killCount += dp[keys[ki]];
+            var dmgVal = +keys[ki];
+            var count = dp[keys[ki]];
+            if (dmgVal >= initialHP) {
+                killCount += count;
+            }
+            if (dmgVal <= maxAllowedDamage) {
+                surviveCount += count;
+            }
         }
 
-        return killCount / totalWays * 100;
+        var killProba = (killCount / totalWays) * 100;
+        var surviveProba = (surviveCount / totalWays) * 100;
+        var dropBelowProba = ((totalWays - surviveCount) / totalWays) * 100;
+
+        return {
+            totalWays: totalWays,
+            initialHP: initialHP,
+            minRemainingHP: rem,
+            maxAllowedDamage: maxAllowedDamage,
+            killProba: killProba,
+            surviveProba: surviveProba,
+            dropBelowProba: dropBelowProba
+        };
+    }
+
+    /**
+     * computeMultiRollKillProba(rollArrays, hp, minRemainingHP)
+     *
+     * Mathematically identical to Naiyo proba_2roll...proba_7roll but uses
+     * DP convolution to avoid O(16^7) browser-freezing iteration.
+     */
+    function computeMultiRollKillProba(rollArrays, hp, minRemainingHP) {
+        var res = computeMultiRollThresholdProba(rollArrays, hp, minRemainingHP);
+        if (minRemainingHP !== undefined && minRemainingHP !== null && +minRemainingHP > 0) {
+            return res.surviveProba;
+        }
+        return res.killProba;
     }
 
     /* =========================================================================
@@ -388,12 +427,13 @@
      * ====================================================================== */
 
     window.ProbabilityCalc = {
-        computeMoveOverlapProba:   computeMoveOverlapProba,
-        computeMultiRollKillProba: computeMultiRollKillProba,
-        detectOverlapOrKill:       detectOverlapOrKill,
-        parseRollString:           parseRollString,
-        flattenDamage:             flattenDamage,
-        getFullMoveRolls:          getFullMoveRolls
+        computeMoveOverlapProba:        computeMoveOverlapProba,
+        computeMultiRollKillProba:      computeMultiRollKillProba,
+        computeMultiRollThresholdProba: computeMultiRollThresholdProba,
+        detectOverlapOrKill:            detectOverlapOrKill,
+        parseRollString:                parseRollString,
+        flattenDamage:                  flattenDamage,
+        getFullMoveRolls:               getFullMoveRolls
     };
 
 })(window);

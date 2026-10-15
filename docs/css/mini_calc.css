@@ -1,0 +1,291 @@
+/**
+ * mini_calc.css
+ * Styling for the embedded Mini Calculator Widget.
+ * Matches Null-Damage-Calc Design Architecture (Dark, Light, Original-Dark).
+ */
+
+/* ---------------------------------------------------------------------------
+   Container & Placement
+   --------------------------------------------------------------------------- */
+fieldset#mini-calc-container.mini-calc-box {
+    box-sizing: content-box;
+    width: 30em !important;
+    min-width: 30em !important;
+    clear: left;
+    float: left;
+    margin-top: 0.6em;
+    padding: 8px 10px 10px 10px;
+    border-radius: 6px;
+    border: 1px solid #000;
+    background-color: var(--fieldset-color, #333333);
+    color: var(--text, #e4e4e4);
+    position: relative;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+fieldset#mini-calc-container.mini-calc-box:focus-visible {
+    border-color: #4a90d9 !important;
+    box-shadow: 0 0 0 2px rgba(74, 144, 217, 0.35);
+}
+
+/* Hidden by Settings Toggle: zero space, no layout shift */
+fieldset#mini-calc-container.mini-calc--hidden {
+    display: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    height: 0 !important;
+    border: 0 !important;
+}
+
+.mini-calc-legend {
+    font-size: 0.88em;
+    font-weight: bold;
+    padding: 0 8px;
+    text-align: center;
+    color: inherit;
+}
+
+/* ---------------------------------------------------------------------------
+   Display Screen
+   --------------------------------------------------------------------------- */
+.mini-calc-screen {
+    background: rgba(0, 0, 0, 0.40);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+    padding: 6px 10px;
+    margin-bottom: 7px;
+    cursor: pointer;
+    position: relative;
+    user-select: none;
+    transition: border-color 0.15s, background-color 0.15s;
+}
+
+.mini-calc-screen:hover {
+    border-color: rgba(74, 144, 217, 0.45);
+    background: rgba(0, 0, 0, 0.48);
+}
+
+.mini-calc-formula {
+    font-family: 'Ubuntu Mono', monospace, monospace;
+    font-size: 0.80em;
+    color: #888888;
+    min-height: 1.25em;
+    text-align: right;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    letter-spacing: 0.02em;
+}
+
+.mini-calc-display-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    position: relative;
+    margin-top: 2px;
+}
+
+.mini-calc-display {
+    font-family: 'Ubuntu Mono', monospace, monospace;
+    font-size: 1.35em;
+    font-weight: 700;
+    color: var(--text, #e4e4e4);
+    text-align: right;
+    line-height: 1.2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+}
+
+.mini-calc-tooltip {
+    position: absolute;
+    left: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(50, 200, 100, 0.90);
+    color: #ffffff;
+    font-size: 0.72em;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease-in-out;
+}
+
+.mini-calc-tooltip.mini-calc-tooltip--visible {
+    opacity: 1;
+}
+
+/* ---------------------------------------------------------------------------
+   Buttons Grid
+   --------------------------------------------------------------------------- */
+.mini-calc-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+}
+
+.mini-calc-btn {
+    height: 31px;
+    font-family: inherit;
+    font-size: 0.92em;
+    font-weight: 600;
+    border-radius: 5px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid transparent;
+    user-select: none;
+    transition: background-color 0.12s, border-color 0.12s, transform 0.06s;
+    outline: none;
+}
+
+.mini-calc-btn:active {
+    transform: scale(0.96);
+}
+
+.mini-calc-btn:focus-visible {
+    border-color: #4a90d9 !important;
+    box-shadow: 0 0 0 1px #4a90d9;
+}
+
+/* Number & dot & sign keys */
+.mini-calc-btn--num {
+    background: rgba(255, 255, 255, 0.07);
+    border-color: rgba(255, 255, 255, 0.12);
+    color: var(--text, #e4e4e4);
+}
+.mini-calc-btn--num:hover {
+    background: rgba(255, 255, 255, 0.14);
+    border-color: rgba(255, 255, 255, 0.22);
+}
+
+/* Operator keys (+, -, ×, ÷, %) */
+.mini-calc-btn--op {
+    background: rgba(74, 144, 217, 0.16);
+    border-color: rgba(74, 144, 217, 0.35);
+    color: #7bbfff;
+}
+.mini-calc-btn--op:hover {
+    background: rgba(74, 144, 217, 0.28);
+    border-color: rgba(74, 144, 217, 0.55);
+}
+
+/* Clear keys (C, CE, ⌫) */
+.mini-calc-btn--clear {
+    background: rgba(220, 70, 70, 0.14);
+    border-color: rgba(220, 70, 70, 0.30);
+    color: #ff7070;
+}
+.mini-calc-btn--clear:hover {
+    background: rgba(220, 70, 70, 0.26);
+    border-color: rgba(220, 70, 70, 0.50);
+}
+
+/* Equals key (=) */
+.mini-calc-btn--equals {
+    grid-column: 1 / span 4;
+    height: 32px;
+    background: #2563eb;
+    border-color: #3b82f6;
+    color: #ffffff;
+    font-size: 1.1em;
+    font-weight: 700;
+    box-shadow: 0 1px 3px rgba(37, 99, 235, 0.35);
+}
+.mini-calc-btn--equals:hover {
+    background: #1d4ed8;
+    border-color: #2563eb;
+}
+
+/* ---------------------------------------------------------------------------
+   Light Theme Support ([data-theme="light"])
+   --------------------------------------------------------------------------- */
+[data-theme="light"] fieldset#mini-calc-container.mini-calc-box {
+    border: 1px solid #aaa !important;
+    background-color: #ffffff !important;
+    color: #1a1a2e !important;
+}
+
+[data-theme="light"] .mini-calc-screen {
+    background: #f7f9fa;
+    border: 1px solid #cccccc;
+}
+
+[data-theme="light"] .mini-calc-screen:hover {
+    border-color: #1464b4;
+    background: #f0f4f8;
+}
+
+[data-theme="light"] .mini-calc-formula {
+    color: #777777;
+}
+
+[data-theme="light"] .mini-calc-display {
+    color: #1a1a2e;
+}
+
+[data-theme="light"] .mini-calc-tooltip {
+    background: #0a7832;
+}
+
+[data-theme="light"] .mini-calc-btn--num {
+    background: #ffffff;
+    border-color: #cccccc;
+    color: #222222;
+}
+[data-theme="light"] .mini-calc-btn--num:hover {
+    background: #e9ecef;
+    border-color: #bbbbbb;
+}
+
+[data-theme="light"] .mini-calc-btn--op {
+    background: rgba(20, 100, 180, 0.08);
+    border-color: rgba(20, 100, 180, 0.30);
+    color: #1464b4;
+}
+[data-theme="light"] .mini-calc-btn--op:hover {
+    background: rgba(20, 100, 180, 0.18);
+    border-color: rgba(20, 100, 180, 0.50);
+}
+
+[data-theme="light"] .mini-calc-btn--clear {
+    background: rgba(200, 0, 0, 0.07);
+    border-color: rgba(200, 0, 0, 0.25);
+    color: #c00000;
+}
+[data-theme="light"] .mini-calc-btn--clear:hover {
+    background: rgba(200, 0, 0, 0.16);
+    border-color: rgba(200, 0, 0, 0.45);
+}
+
+[data-theme="light"] .mini-calc-btn--equals {
+    background: #1464b4;
+    border-color: #0f4c8a;
+    color: #ffffff;
+    box-shadow: 0 1px 3px rgba(20, 100, 180, 0.35);
+}
+[data-theme="light"] .mini-calc-btn--equals:hover {
+    background: #0f4c8a;
+    border-color: #0c3b6b;
+}
+
+/* ---------------------------------------------------------------------------
+   Original-Dark Theme Support (html.theme-original-dark)
+   --------------------------------------------------------------------------- */
+html.theme-original-dark fieldset#mini-calc-container.mini-calc-box {
+    border-color: var(--border-ui, #aaaaaa) !important;
+    background-color: var(--fieldset-color, #2a2a2a) !important;
+}
+
+html.theme-original-dark .mini-calc-screen {
+    border-color: var(--border-ui-muted, #888888);
+}
+
+html.theme-original-dark .mini-calc-btn--num {
+    border-color: var(--border-ui-muted, #888888);
+}

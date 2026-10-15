@@ -4074,20 +4074,36 @@ function getNullCalcSettings() {
 		if (raw) {
 			var parsed = JSON.parse(raw);
 			return {
-				showMoveFilter:  parsed.showMoveFilter  !== false,
-				showMgbaSync:    parsed.showMgbaSync    !== false,
-				showHpFractions: parsed.showHpFractions !== false,
-				enable8Moves:    parsed.enable8Moves    === true,
-				showOverlapRoll: parsed.showOverlapRoll === true
+				showMoveFilter:        parsed.showMoveFilter        !== false,
+				showMgbaSync:          parsed.showMgbaSync          !== false,
+				showHpFractions:       parsed.showHpFractions       !== false,
+				enable8Moves:          parsed.enable8Moves          === true,
+				showOverlapRoll:       parsed.showOverlapRoll       === true,
+				showMiniCalc:          parsed.showMiniCalc          === true,
+				showQuickApplyDamage:  parsed.showQuickApplyDamage  !== false,
+				moveFilterMethods: parsed.moveFilterMethods || {
+					known: true,
+					tutor: true,
+					tm: true,
+					relearner: true
+				}
 			};
 		}
 	} catch (e) {}
 	return {
-		showMoveFilter:  true,
-		showMgbaSync:    true,
-		showHpFractions: true,
-		enable8Moves:    false,
-		showOverlapRoll: false
+		showMoveFilter:        true,
+		showMgbaSync:          true,
+		showHpFractions:       true,
+		enable8Moves:          false,
+		showOverlapRoll:       false,
+		showMiniCalc:          false,
+		showQuickApplyDamage:  true,
+		moveFilterMethods: {
+			known: true,
+			tutor: true,
+			tm: true,
+			relearner: true
+		}
 	};
 }
 
@@ -4148,20 +4164,26 @@ function applyFeatureVisibility(feature, isVisible) {
 		for (var j = 0; j < fracEls.length; j++) {
 			fracEls[j].classList.toggle("hidden-by-setting", !isVisible);
 		}
+	} else if (feature === "showQuickApplyDamage") {
+		doc.classList.toggle("hide-feature-quick-apply-damage", !isVisible);
+		var quickApplyEl = document.getElementById("quick-apply-damage-row");
+		if (quickApplyEl) quickApplyEl.classList.toggle("hidden-by-setting", !isVisible);
 	}
 }
 
 function initFeatureVisibilitySettings() {
 	var settings = getNullCalcSettings();
 
-	var moveFilterCb = document.getElementById("setting-toggle-move-filter");
-	var mgbaSyncCb   = document.getElementById("setting-toggle-mgba-sync");
-	var hpFracCb     = document.getElementById("setting-toggle-hp-fractions");
-	var moves8Cb     = document.getElementById("setting-toggle-8-moves");
+	var moveFilterCb  = document.getElementById("setting-toggle-move-filter");
+	var mgbaSyncCb    = document.getElementById("setting-toggle-mgba-sync");
+	var hpFracCb      = document.getElementById("setting-toggle-hp-fractions");
+	var moves8Cb      = document.getElementById("setting-toggle-8-moves");
+	var quickApplyCb  = document.getElementById("setting-toggle-quick-apply-damage");
 
 	applyFeatureVisibility("showMoveFilter", settings.showMoveFilter);
 	applyFeatureVisibility("showMgbaSync", settings.showMgbaSync);
 	applyFeatureVisibility("showHpFractions", settings.showHpFractions);
+	applyFeatureVisibility("showQuickApplyDamage", settings.showQuickApplyDamage);
 	apply8MovesMode(settings.enable8Moves);
 
 	if (moveFilterCb) {
@@ -4197,6 +4219,15 @@ function initFeatureVisibilitySettings() {
 			settings.enable8Moves = moves8Cb.checked;
 			saveNullCalcSettings(settings);
 			apply8MovesMode(settings.enable8Moves);
+		});
+	}
+
+	if (quickApplyCb) {
+		quickApplyCb.checked = settings.showQuickApplyDamage;
+		quickApplyCb.addEventListener("change", function () {
+			settings.showQuickApplyDamage = quickApplyCb.checked;
+			saveNullCalcSettings(settings);
+			applyFeatureVisibility("showQuickApplyDamage", settings.showQuickApplyDamage);
 		});
 	}
 }

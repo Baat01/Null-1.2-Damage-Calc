@@ -46,38 +46,77 @@
      * @param {Function} [cb]  called with no args once ready
      */
     function ensureLearnsets(cb) {
-        if (LEARNSETS) { if (cb) cb(); return; }
+        if (LEARNSETS && Object.keys(LEARNSETS).length) { if (cb) cb(); return; }
         if (cb) _onLoadCallbacks.push(cb);
         if (_loading) return;
         _loading = true;
 
-        var xhr = new XMLHttpRequest();
-        xhr.open('GET', './learnsets.js', true);
-        xhr.onreadystatechange = function () {
-            if (xhr.readyState !== 4) return;
-            if (xhr.status === 200 || xhr.status === 0) {
-                try {
-                    // The file uses `exports.BattleLearnsets = {...}`.
-                    // Evaluate in a sandbox with a local `exports` so we don't
-                    // overwrite the calc-engine's global `exports` shim.
-                    var localExports = {};
-                    // eslint-disable-next-line no-new-func
-                    (new Function('exports', xhr.responseText))(localExports);
-                    LEARNSETS = localExports.BattleLearnsets || {};
-                } catch (e) {
-                    console.error('[MoveSearch] Failed to parse learnsets.js:', e);
-                    LEARNSETS = {};
-                }
-                _buildMoveNameList();
-            } else {
-                console.warn('[MoveSearch] Could not load learnsets.js (status ' + xhr.status + ')');
-                LEARNSETS = {};
-            }
+        function _finishLoading() {
             _loading = false;
             var cbs = _onLoadCallbacks.splice(0);
             for (var i = 0; i < cbs.length; i++) cbs[i]();
-        };
-        xhr.send();
+        }
+
+        function _fallbackLoadScript() {
+            if (typeof BattleLearnsets !== 'undefined' && BattleLearnsets) {
+                LEARNSETS = BattleLearnsets;
+                _buildMoveNameList();
+                _finishLoading();
+                return;
+            }
+            if (typeof exports !== 'undefined' && exports.BattleLearnsets) {
+                LEARNSETS = exports.BattleLearnsets;
+                _buildMoveNameList();
+                _finishLoading();
+                return;
+            }
+            var s = document.createElement('script');
+            s.type = 'text/javascript';
+            s.src = './learnsets.js';
+            s.onload = function () {
+                if (typeof BattleLearnsets !== 'undefined') {
+                    LEARNSETS = BattleLearnsets;
+                } else if (typeof exports !== 'undefined' && exports.BattleLearnsets) {
+                    LEARNSETS = exports.BattleLearnsets;
+                }
+                _buildMoveNameList();
+                _finishLoading();
+            };
+            s.onerror = function () {
+                console.warn('[MoveSearch] Could not load learnsets.js via script tag either.');
+                LEARNSETS = {};
+                _finishLoading();
+            };
+            document.head.appendChild(s);
+        }
+
+        try {
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', './learnsets.js', true);
+            xhr.onerror = function () {
+                _fallbackLoadScript();
+            };
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState !== 4) return;
+                if ((xhr.status === 200 || xhr.status === 0) && xhr.responseText) {
+                    try {
+                        var localExports = {};
+                        (new Function('exports', xhr.responseText))(localExports);
+                        LEARNSETS = localExports.BattleLearnsets || {};
+                    } catch (e) {
+                        console.error('[MoveSearch] Failed to parse learnsets.js:', e);
+                        LEARNSETS = {};
+                    }
+                    _buildMoveNameList();
+                    _finishLoading();
+                } else {
+                    _fallbackLoadScript();
+                }
+            };
+            xhr.send();
+        } catch (e) {
+            _fallbackLoadScript();
+        }
     }
 
     // ── Move Name Normalisation ───────────────────────────────────────────────
@@ -206,10 +245,65 @@
         var strippedBase = stripped.split('-')[0];
         if (LEARNSETS[strippedBase]) return strippedBase;
 
+        // 6. Check baseSpecies from pokedex
+        if (typeof pokedex !== 'undefined' && pokedex && pokedex[speciesName] && pokedex[speciesName].baseSpecies) {
+            var bKey = resolveLearnsetKey(pokedex[speciesName].baseSpecies);
+            if (bKey) return bKey;
+        }
+
         return '';
     }
 
     // ── Learn Method Lookup ───────────────────────────────────────────────────
+
+    // ── Method Filter Settings & Persistence ──────────────────────────────────
+    function getMoveFilterMethodsSetting() {
+        try {
+            var raw = localStorage.getItem('nullCalcSettings');
+            if (raw) {
+                var s = JSON.parse(raw);
+                if (s && s.moveFilterMethods) {
+                    return {
+                        known:     s.moveFilterMethods.known !== false,
+                        tutor:     s.moveFilterMethods.tutor !== false,
+                        tm:        s.moveFilterMethods.tm !== false,
+                        relearner: s.moveFilterMethods.relearner !== false
+                    };
+                }
+            }
+        } catch (e) {}
+        return { known: true, tutor: true, tm: true, relearner: true };
+    }
+
+    function saveMoveFilterMethodsSetting(methods) {
+        try {
+            var raw = localStorage.getItem('nullCalcSettings');
+            var s = raw ? JSON.parse(raw) : {};
+            s.moveFilterMethods = methods;
+            localStorage.setItem('nullCalcSettings', JSON.stringify(s));
+        } catch (e) {}
+    }
+
+    function getActiveMethodFilters() {
+        var items = document.querySelectorAll('.move-legend-item');
+        if (!items || !items.length) {
+            return getMoveFilterMethodsSetting();
+        }
+        var res = {};
+        for (var i = 0; i < items.length; i++) {
+            var el = items[i];
+            var m = el.getAttribute('data-method');
+            if (m) {
+                res[m] = !el.classList.contains('inactive');
+            }
+        }
+        return {
+            known:     res.known !== false,
+            tutor:     res.tutor !== false,
+            tm:        res.tm !== false,
+            relearner: res.relearner !== false
+        };
+    }
 
     /**
      * Determine how (or if) a Pokémon can obtain a given move.
@@ -221,6 +315,8 @@
     function getMoveLearnMethod(dataId, moveName) {
         if (!LEARNSETS || !dataId || !moveName) return null;
 
+        var activeFilters = getActiveMethodFilters();
+
         // ── Parse data-id ─────────────────────────────────────────────────────
         // Optional prefix: "[index]SpeciesName (SetName)"
         var raw = dataId;
@@ -228,10 +324,16 @@
             var cb = raw.indexOf(']');
             if (cb >= 0) raw = raw.slice(cb + 1);
         }
+        var speciesName = '';
+        var setName     = '';
         var parenIdx = raw.indexOf(' (');
-        if (parenIdx === -1) return null;
-        var speciesName = raw.substring(0, parenIdx).trim();
-        var setName     = raw.substring(parenIdx + 2, raw.lastIndexOf(')')).trim();
+        if (parenIdx !== -1) {
+            speciesName = raw.substring(0, parenIdx).trim();
+            setName     = raw.substring(parenIdx + 2, raw.lastIndexOf(')')).trim();
+        } else {
+            speciesName = raw.trim();
+        }
+        if (!speciesName) return null;
 
         // ── Look up SETDEX entry for level + known moves ───────────────────────
         var setdexEntry = null;
@@ -241,7 +343,12 @@
                 var alt = resolveSetdexKey(speciesName);
                 if (alt) speciesEntry = SETDEX_SV[alt];
             }
-            if (speciesEntry) setdexEntry = speciesEntry[setName];
+            if (speciesEntry) {
+                setdexEntry = setName ? speciesEntry[setName] : speciesEntry[Object.keys(speciesEntry)[0]];
+            }
+        }
+        if (!setdexEntry && typeof customsets !== 'undefined' && customsets && customsets[speciesName]) {
+            setdexEntry = setName ? customsets[speciesName][setName] : customsets[speciesName][Object.keys(customsets[speciesName])[0]];
         }
 
         var currentLevel = (setdexEntry && setdexEntry.level) ? (Number(setdexEntry.level) || 100) : 100;
@@ -249,8 +356,15 @@
         var searchKey    = normaliseMoveKey(moveName);
 
         // ── 1. KNOWN ──────────────────────────────────────────────────────────
+        var knowsMove = false;
         for (var i = 0; i < knownMoves.length; i++) {
-            if (normaliseMoveKey(knownMoves[i]) === searchKey) return 'KNOWN';
+            if (normaliseMoveKey(knownMoves[i]) === searchKey) {
+                knowsMove = true;
+                break;
+            }
+        }
+        if (knowsMove && activeFilters.known) {
+            return 'KNOWN';
         }
 
         // ── 2-4. Learnset check ────────────────────────────────────────────────
@@ -272,15 +386,15 @@
             }
         }
 
-        if (hasT)     return 'TUTOR';
-        if (hasM)     return 'TM';
-        if (hasScale) return 'SCALE';
+        if (hasT && activeFilters.tutor)         return 'TUTOR';
+        if (hasM && activeFilters.tm)            return 'TM';
+        if (hasScale && activeFilters.relearner) return 'SCALE';
         return null;
     }
 
     // ── DOM Update Logic ──────────────────────────────────────────────────────
 
-    var BOX_QUERY = '#box-poke-list .trainer-pok, #box-poke-list2 .trainer-pok, #team-poke-list .trainer-pok';
+    var BOX_QUERY = '#box-poke-list .trainer-pok, #box-poke-list2 .trainer-pok, #team-poke-list .trainer-pok, .pokemon-slot, .box-mon';
 
     var MOVE_CLASS = {
         'KNOWN': 'move-filter-known',
@@ -288,16 +402,29 @@
         'TM':    'move-filter-tm',
         'SCALE': 'move-filter-scale'
     };
-    var ALL_MOVE_CLASSES = ['move-filter-known', 'move-filter-tutor', 'move-filter-tm', 'move-filter-scale'];
+    var BORDER_MOVE_CLASS = {
+        'KNOWN': 'border-move-known',
+        'TUTOR': 'border-move-tutor',
+        'TM':    'border-move-tm',
+        'SCALE': 'border-move-scale'
+    };
+    var ALL_MOVE_CLASSES = [
+        'move-filter-known', 'move-filter-tutor', 'move-filter-tm', 'move-filter-scale',
+        'border-move-known', 'border-move-tutor', 'border-move-tm', 'border-move-scale'
+    ];
 
     /** Priority order for choosing the best method across multiple moves. */
     var METHOD_PRIORITY = { 'KNOWN': 4, 'TUTOR': 3, 'TM': 2, 'SCALE': 1 };
+
+    var _lastFilterPayload = null;
 
     /**
      * Apply (or remove) move-filter border classes on all box Pokémon elements.
      * @param {string|string[]} moveNameOrList  single display name, array of names, or '' to clear.
      */
     function applyMoveFilter(moveNameOrList) {
+        _lastFilterPayload = moveNameOrList;
+
         var moveList = [];
         if (Array.isArray(moveNameOrList)) {
             moveList = moveNameOrList.filter(function (n) { return n && normaliseMoveKey(n); });
@@ -324,15 +451,54 @@
                 var prio   = method ? (METHOD_PRIORITY[method] || 0) : 0;
                 if (prio > bestPriority) { bestPriority = prio; bestMethod = method; }
             }
-            if (bestMethod && MOVE_CLASS[bestMethod]) el.classList.add(MOVE_CLASS[bestMethod]);
+            if (bestMethod && MOVE_CLASS[bestMethod]) {
+                el.classList.add(MOVE_CLASS[bestMethod]);
+                el.classList.add(BORDER_MOVE_CLASS[bestMethod]);
+            }
+        }
+    }
+
+    /** Re-evaluate and re-apply current filter without resetting search input or category */
+    function reapplyActiveFilter() {
+        if (_activeCategoryId) {
+            var cats = _getAllCategories();
+            for (var i = 0; i < cats.length; i++) {
+                if (cats[i].id === _activeCategoryId) {
+                    var categoryMoves = cats[i].moves;
+                    ensureLearnsets(function () { applyMoveFilter(categoryMoves); });
+                    return;
+                }
+            }
+        }
+        if (_activeMove) {
+            var moveName = _activeMove;
+            ensureLearnsets(function () { applyMoveFilter(moveName); });
+            return;
+        }
+        var input = document.getElementById('move-search-input');
+        var val = (input ? input.value : '') || '';
+        if (val.trim()) {
+            var resolved = _resolveFilter(val);
+            if (resolved) {
+                if (resolved.type === 'category') {
+                    ensureLearnsets(function () { applyMoveFilter(resolved.category.moves); });
+                } else {
+                    ensureLearnsets(function () { applyMoveFilter(resolved.moveName); });
+                }
+                return;
+            }
+        }
+        if (_lastFilterPayload) {
+            var payload = _lastFilterPayload;
+            ensureLearnsets(function () { applyMoveFilter(payload); });
         }
     }
 
     /** Clear filter completely and reset input and category picker. */
-    /** Clear filter completely and reset input. */
     function clearMoveFilter() {
-        _activeMove       = '';
-        _activeCategoryId = null;
+        _activeMove        = '';
+        _activeCategoryId  = null;
+        _lastFilterPayload = null;
         applyMoveFilter('');
         var input    = document.getElementById('move-search-input');
         var clearBtn = document.getElementById('move-search-clear');
@@ -525,8 +691,15 @@
     }
 
     function _onInputChange(e) {
-        var val = (e.target.value || '').trim();
+        var input = (e && e.target) ? e.target : document.getElementById('move-search-input');
+        var val = (input && input.value ? input.value : '').trim();
         if (!val) { clearMoveFilter(); return; }
+
+        ensureLearnsets(function () {
+            if (!_allMoveNames.length) _buildMoveNameList();
+            var matches = _getSuggestions(val);
+            _showDropdown(matches);
+        });
 
         var matches = _getSuggestions(val);
         _showDropdown(matches);
@@ -575,6 +748,9 @@
     // ── UI Injection ──────────────────────────────────────────────────────────
 
     function injectMoveSearchUI() {
+        var existing = document.getElementById('move-search-container');
+        if (existing) return;
+
         var wrapper = document.getElementById('import-1_wrapper');
         if (!wrapper) return;
 
@@ -591,19 +767,65 @@
                 '  aria-controls="move-search-dropdown" />' +
                 '<button id="move-search-clear" class="move-search-clear" type="button"' +
                 '  title="Clear move filter" aria-label="Clear move filter" hidden>\u2715</button>' +
+                '<div id="move-search-dropdown" class="move-search-dropdown"' +
+                '  role="listbox" aria-label="Move and category suggestions" hidden></div>' +
               '</div>' +
             '</div>' +
-            '<div id="move-search-dropdown" class="move-search-dropdown"' +
-            '  role="listbox" aria-label="Move and category suggestions" hidden></div>' +
-            '<div class="move-search-legend">' +
-              '<span class="msleg msleg-known">&#9632; Knows</span>' +
-              '<span class="msleg msleg-tutor">&#9632; Tutor</span>' +
-              '<span class="msleg msleg-tm">&#9632; TM</span>' +
-              '<span class="msleg msleg-scale">&#9632; Relearner</span>' +
+            '<div class="move-search-legend" id="move-search-legend">' +
+              '<span class="move-legend-item active" data-method="known" role="button" tabindex="0" title="Toggle Knows filter">' +
+                '<span class="legend-square legend-square-known"></span>' +
+                '<span class="legend-text">Knows</span>' +
+              '</span>' +
+              '<span class="move-legend-item active" data-method="tutor" role="button" tabindex="0" title="Toggle Tutor filter">' +
+                '<span class="legend-square legend-square-tutor"></span>' +
+                '<span class="legend-text">Tutor</span>' +
+              '</span>' +
+              '<span class="move-legend-item active" data-method="tm" role="button" tabindex="0" title="Toggle TM filter">' +
+                '<span class="legend-square legend-square-tm"></span>' +
+                '<span class="legend-text">TM</span>' +
+              '</span>' +
+              '<span class="move-legend-item active" data-method="relearner" role="button" tabindex="0" title="Toggle Relearner filter">' +
+                '<span class="legend-square legend-square-relearner"></span>' +
+                '<span class="legend-text">Relearner</span>' +
+              '</span>' +
             '</div>';
 
         wrapper.parentNode.insertBefore(container, wrapper);
         _dropdownEl = document.getElementById('move-search-dropdown');
+
+        // Wire up method filter toggles (classic text + colored square, no checkboxes)
+        var savedMethods = getMoveFilterMethodsSetting();
+        var legendItems = container.querySelectorAll('.move-legend-item');
+
+        function updateLegendItemState(item, active) {
+            item.classList.toggle('active', !!active);
+            item.classList.toggle('inactive', !active);
+            item.setAttribute('aria-pressed', active ? 'true' : 'false');
+        }
+
+        for (var li = 0; li < legendItems.length; li++) {
+            (function (item) {
+                var key = item.getAttribute('data-method');
+                var isInitiallyActive = savedMethods[key] !== false;
+                updateLegendItemState(item, isInitiallyActive);
+
+                function toggle() {
+                    var nowActive = item.classList.contains('inactive');
+                    updateLegendItemState(item, nowActive);
+                    var current = getActiveMethodFilters();
+                    saveMoveFilterMethodsSetting(current);
+                    reapplyActiveFilter();
+                }
+
+                item.addEventListener('click', toggle);
+                item.addEventListener('keydown', function (e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        toggle();
+                    }
+                });
+            })(legendItems[li]);
+        }
 
         var input    = document.getElementById('move-search-input');
         var clearBtn = document.getElementById('move-search-clear');
@@ -618,6 +840,10 @@
             var hasVal = !!(e.target.value || '').trim();
             if (hasVal) clearBtn.removeAttribute('hidden');
             else        clearBtn.setAttribute('hidden', '');
+            _onInputChange(e);
+        });
+
+        input.addEventListener('change', function (e) {
             _onInputChange(e);
         });
 
@@ -688,6 +914,7 @@
     function init() {
         injectMoveSearchUI();
         _installBoxObserver();
+        ensureLearnsets();
     }
 
     if (document.readyState === 'loading') {
@@ -697,12 +924,16 @@
     }
 
     // ── Public API ────────────────────────────────────────────────────────────
+    window.initMoveSearch = init;
     window.MoveSearch = {
-        getMoveLearnMethod:   getMoveLearnMethod,
-        clearFilter:          clearMoveFilter,
-        applyFilter:          function (name) { _selectMove(name); },
-        getLearnsets:         function () { return LEARNSETS; },
-        refreshCategoryPicker: refreshCategoryPicker
+        init:                   init,
+        getMoveLearnMethod:     getMoveLearnMethod,
+        getActiveMethodFilters: getActiveMethodFilters,
+        clearFilter:            clearMoveFilter,
+        reapplyFilter:          reapplyActiveFilter,
+        applyFilter:            function (name) { _selectMove(name); },
+        getLearnsets:           function () { return LEARNSETS; },
+        refreshCategoryPicker:  refreshCategoryPicker
     };
 
 })();

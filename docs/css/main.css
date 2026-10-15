@@ -410,33 +410,29 @@ fieldset.opposing-team-box:has(#trainer-poks-remaining .trainer-pok-list-opposin
     margin-right: 0;
     flex-shrink: 0;
     display: inline-flex;
-    align-items: stretch;
+    align-items: center;
     gap: 0;
 }
 .app-header-tab {
-    min-width: 5.5em;
-    /* Use base `.btn` negative margins to visually connect. */
-    margin-right: 0;
-    display: inline-flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    line-height: 1.05;
-    font-size: 0.82em;
-    padding: 1px 7px;
-    height: 27px;
-    box-sizing: border-box;
-}
-#header-categories-button {
-    display: inline-flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    line-height: 1.05;
-    padding: 1px 7px;
+    display: inline-flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    align-items: center !important;
+    text-align: center !important;
+    line-height: 1.1 !important;
+    padding: 4px 10px !important;
+    box-sizing: border-box !important;
+    height: 38px !important; /* Uniform fixed height for all header buttons */
+    font-size: 0.88em !important;
+    min-width: 6.5em;
     width: auto;
+    margin-right: 0;
+}
+.app-header-tab br {
+    display: block;
+}
+.app-header-tabs .app-header-tab + .app-header-tab {
+    margin-left: -1px;
 }
 .app-header-tabs .app-header-tab {
     border-radius: 0;
@@ -2022,28 +2018,56 @@ select.status {
    ═══════════════════════════════════════════════════════════════════════════════ */
 
 /* 1. Knows the move (already in its 4-slot moveset) */
-.move-filter-known {
+.move-filter-known,
+.border-move-known,
+.trainer-pok.move-filter-known,
+.trainer-pok.border-move-known,
+.pokemon-slot.move-filter-known,
+.pokemon-slot.border-move-known,
+.box-mon.move-filter-known,
+.box-mon.border-move-known {
     outline: 3px solid #28a745 !important;
     outline-offset: -2px;
     border-radius: 6px;
 }
 
 /* 2. Can learn via Move Tutor */
-.move-filter-tutor {
+.move-filter-tutor,
+.border-move-tutor,
+.trainer-pok.move-filter-tutor,
+.trainer-pok.border-move-tutor,
+.pokemon-slot.move-filter-tutor,
+.pokemon-slot.border-move-tutor,
+.box-mon.move-filter-tutor,
+.box-mon.border-move-tutor {
     outline: 3px solid #ffc107 !important;
     outline-offset: -2px;
     border-radius: 6px;
 }
 
 /* 3. Can learn via TM / Machine */
-.move-filter-tm {
+.move-filter-tm,
+.border-move-tm,
+.trainer-pok.move-filter-tm,
+.trainer-pok.border-move-tm,
+.pokemon-slot.move-filter-tm,
+.pokemon-slot.border-move-tm,
+.box-mon.move-filter-tm,
+.box-mon.border-move-tm {
     outline: 3px solid #fd7e14 !important;
     outline-offset: -2px;
     border-radius: 6px;
 }
 
 /* 4. Can relearn via Heart Scale / level-up at or below current level */
-.move-filter-scale {
+.move-filter-scale,
+.border-move-scale,
+.trainer-pok.move-filter-scale,
+.trainer-pok.border-move-scale,
+.pokemon-slot.move-filter-scale,
+.pokemon-slot.border-move-scale,
+.box-mon.move-filter-scale,
+.box-mon.border-move-scale {
     outline: 3px solid #dc3545 !important;
     outline-offset: -2px;
     border-radius: 6px;
@@ -2119,12 +2143,29 @@ select.status {
     right: 0;
     top: calc(100% + 2px);
     background: var(--bg-color, #fff);
+    color: var(--text, #111);
     border: 1px solid var(--fieldset-color, #888);
     border-radius: 3px;
     z-index: 9999;
     max-height: 220px;
     overflow-y: auto;
     box-shadow: 0 4px 12px rgba(0,0,0,.25);
+}
+
+[data-theme="dark"] .move-search-dropdown,
+html.dark-theme .move-search-dropdown {
+    background: #25282c;
+    color: #e0e0e0;
+    border-color: #555;
+    box-shadow: 0 4px 12px rgba(0,0,0,.5);
+}
+
+[data-theme="dark"] .move-search-dropdown-item:hover,
+html.dark-theme .move-search-dropdown-item:hover,
+[data-theme="dark"] .move-search-dropdown-item:focus,
+html.dark-theme .move-search-dropdown-item:focus {
+    background: #3a5b88;
+    color: #fff;
 }
 
 .move-search-dropdown-item {
@@ -2143,16 +2184,214 @@ select.status {
     outline: none;
 }
 
-/* Colour-coded legend */
+/* Colour-coded legend with clean square icon + text badges */
 .move-search-legend {
     display: flex;
-    gap: 8px;
+    align-items: center;
+    gap: 12px;
     flex-wrap: wrap;
-    margin-top: 5px;
-    font-size: 0.78em;
+    margin-top: 6px;
+    font-size: 0.85em;
+    user-select: none;
 }
 
-.msleg { white-space: nowrap; }
+.move-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    user-select: none;
+    line-height: 1.2;
+    padding: 2px 5px;
+    border-radius: 3px;
+    transition: opacity 0.15s ease, filter 0.15s ease, background-color 0.15s ease;
+}
+
+.move-legend-item:hover {
+    background-color: rgba(128, 128, 128, 0.12);
+}
+
+.legend-square {
+    display: inline-block;
+    width: 9px;
+    height: 9px;
+    border-radius: 1px;
+    flex-shrink: 0;
+}
+
+.legend-square-known     { background-color: #28a745; }
+.legend-square-tutor     { background-color: #ffc107; }
+.legend-square-tm        { background-color: #fd7e14; }
+.legend-square-relearner { background-color: #dc3545; }
+
+.move-legend-item.active {
+    opacity: 1;
+    filter: none;
+    text-decoration: none;
+}
+
+.move-legend-item.inactive {
+    opacity: 0.35 !important;
+    filter: grayscale(100%) !important;
+    text-decoration: line-through !important;
+    cursor: pointer !important;
+}
+
+.move-legend-item.inactive:hover {
+    opacity: 0.55 !important;
+}
+
+/* ── Interactive Damage Roll Quick-Apply (+/- min & max rolls) ────────── */
+.quick-apply-damage-row {
+    display: block;
+    margin-top: 4px;
+    margin-bottom: 2px;
+    user-select: none;
+}
+
+.quick-apply-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    font-size: 0.85em;
+    line-height: 1.2;
+}
+
+.quick-apply-btn {
+    font-family: inherit;
+    font-size: 0.9em;
+    font-weight: 600;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 7px;
+    cursor: pointer;
+    border-radius: 4px;
+    border: 1px solid rgba(128, 128, 128, 0.35);
+    background: rgba(128, 128, 128, 0.12);
+    color: inherit;
+    transition: all 0.15s ease-in-out;
+    box-sizing: border-box;
+}
+
+.quick-apply-btn:hover {
+    background: rgba(128, 128, 128, 0.22);
+    border-color: rgba(128, 128, 128, 0.55);
+}
+
+.quick-apply-btn:active {
+    transform: scale(0.95);
+}
+
+.quick-apply-btn:disabled,
+.quick-apply-btn[disabled] {
+    opacity: 0.45;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+/* Mode switch button styling */
+.quick-apply-mode-btn {
+    font-weight: 700;
+}
+
+.quick-apply-mode-btn.mode-subtraction {
+    color: #e55353;
+    border-color: rgba(229, 83, 83, 0.45);
+    background: rgba(229, 83, 83, 0.12);
+}
+
+.quick-apply-mode-btn.mode-subtraction:hover {
+    background: rgba(229, 83, 83, 0.22);
+    border-color: rgba(229, 83, 83, 0.75);
+}
+
+.quick-apply-mode-btn.mode-addition {
+    color: #28a745;
+    border-color: rgba(40, 167, 69, 0.45);
+    background: rgba(40, 167, 69, 0.12);
+}
+
+.quick-apply-mode-btn.mode-addition:hover {
+    background: rgba(40, 167, 69, 0.22);
+    border-color: rgba(40, 167, 69, 0.75);
+}
+
+/* Roll buttons */
+.quick-apply-roll-btn .roll-sign {
+    font-weight: 700;
+}
+
+.quick-apply-roll-btn.mode-subtraction .roll-sign {
+    color: #dc3545;
+}
+
+.quick-apply-roll-btn.mode-addition .roll-sign {
+    color: #28a745;
+}
+
+.quick-apply-roll-btn .roll-val {
+    font-weight: 700;
+}
+
+.quick-apply-roll-btn .roll-desc {
+    font-size: 0.85em;
+    opacity: 0.75;
+}
+
+.quick-apply-roll-btn:hover.mode-subtraction {
+    background: rgba(220, 53, 69, 0.18);
+    border-color: rgba(220, 53, 69, 0.6);
+}
+
+.quick-apply-roll-btn:hover.mode-addition {
+    background: rgba(40, 167, 69, 0.18);
+    border-color: rgba(40, 167, 69, 0.6);
+}
+
+/* Flash feedback animation on click */
+.quick-apply-btn.quick-apply-flash {
+    transition: none !important;
+    transform: scale(0.92);
+}
+.quick-apply-btn.quick-apply-flash.mode-subtraction {
+    background: #dc3545 !important;
+    color: #fff !important;
+    border-color: #dc3545 !important;
+}
+.quick-apply-btn.quick-apply-flash.mode-addition {
+    background: #28a745 !important;
+    color: #fff !important;
+    border-color: #28a745 !important;
+}
+
+.quick-apply-sep {
+    color: rgba(128, 128, 128, 0.4);
+    font-size: 0.85em;
+    margin: 0 1px;
+}
+
+.quick-apply-target-badge {
+    font-size: 0.82em;
+    color: #777;
+    margin-left: 4px;
+    font-weight: 500;
+}
+
+[data-theme="dark"] .quick-apply-target-badge,
+html.dark-theme .quick-apply-target-badge {
+    color: #aaa;
+}
+
+/* Visibility toggle via Settings */
+html.hide-feature-quick-apply-damage #quick-apply-damage-row,
+html.hide-feature-quick-apply-damage .quick-apply-damage-row {
+    display: none !important;
+}
+
+/* Legacy alias classes */
 .msleg-known { color: #28a745; }
 .msleg-tutor { color: #ffc107; }
 .msleg-tm    { color: #fd7e14; }

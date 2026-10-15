@@ -10,7 +10,6 @@
    Same visual treatment as .app-header-tab siblings
    --------------------------------------------------------------------------- */
 #header-proba-button {
-    line-height: 1.05;
     text-align: center;
 }
 
@@ -195,22 +194,31 @@
 .proba-hp-row {
     display: flex;
     align-items: center;
-    gap: 10px;
+    justify-content: space-between;
+    gap: 14px;
     margin-bottom: 16px;
+    flex-wrap: wrap;
 }
-.proba-hp-row label {
-    font-size: 0.9em;
+.proba-hp-field {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    min-width: 170px;
+}
+.proba-hp-field label {
+    font-size: 0.82em;
     font-weight: 600;
     color: #aaa;
     white-space: nowrap;
-    min-width: 90px;
 }
-[data-theme="light"] .proba-hp-row label {
+[data-theme="light"] .proba-hp-field label {
     color: #555;
 }
 
-#proba-hp-input {
-    width: 90px;
+#proba-hp-input,
+#proba-input-min-remaining-hp {
+    width: 72px;
     padding: 4px 8px;
     border-radius: 6px;
     border: 1px solid rgba(255, 255, 255, 0.15);
@@ -220,16 +228,19 @@
     text-align: center;
     transition: border-color 0.15s;
 }
-#proba-hp-input:focus {
+#proba-hp-input:focus,
+#proba-input-min-remaining-hp:focus {
     outline: none;
     border-color: #4a90d9;
 }
-[data-theme="light"] #proba-hp-input {
+[data-theme="light"] #proba-hp-input,
+[data-theme="light"] #proba-input-min-remaining-hp {
     border: 1px solid #ccc;
     background: #fff;
     color: #1a1a2e;
 }
-[data-theme="light"] #proba-hp-input:focus {
+[data-theme="light"] #proba-hp-input:focus,
+[data-theme="light"] #proba-input-min-remaining-hp:focus {
     border-color: #1464b4;
 }
 

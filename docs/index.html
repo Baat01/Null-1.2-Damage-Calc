@@ -12,6 +12,7 @@
     <link type="text/css" rel="stylesheet" href="./css/dark-theme.css" id="dark-theme-styles">
     <link type="text/css" rel="stylesheet" href="./css/theme-original-dark.css" id="theme-original-dark-styles">
     <link type="text/css" rel="stylesheet" href="./css/probability_calc.css" />
+    <link type="text/css" rel="stylesheet" href="./css/mini_calc.css" />
     <!-- Global site tag (gtag.js) - Google Analytics -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-26211653-3"></script>
     <script>
@@ -57,6 +58,7 @@
                     if (s.showMgbaSync === false) doc.classList.add('hide-feature-mgba-sync');
                     if (s.showHpFractions === false) doc.classList.add('hide-feature-hp-fractions');
                     if (s.enable8Moves === true) doc.classList.add('enable-8-moves');
+                    if (s.showQuickApplyDamage === false) doc.classList.add('hide-feature-quick-apply-damage');
                 }
             } catch (e) {}
         })();
@@ -153,6 +155,20 @@
                 <span class="app-menu-row-label">Enable 8 moveslots</span>
                 <span class="app-menu-toggle">
                     <input type="checkbox" id="setting-toggle-8-moves" class="app-menu-toggle-input" role="switch" />
+                    <span class="app-menu-toggle-track" aria-hidden="true"></span>
+                </span>
+            </label>
+            <label class="app-menu-row app-menu-toggle-row">
+                <span class="app-menu-row-label">Mini Calculatrice / Mini Calculator</span>
+                <span class="app-menu-toggle">
+                    <input type="checkbox" id="setting-toggle-mini-calc" class="app-menu-toggle-input" role="switch" />
+                    <span class="app-menu-toggle-track" aria-hidden="true"></span>
+                </span>
+            </label>
+            <label class="app-menu-row app-menu-toggle-row">
+                <span class="app-menu-row-label">Quick-Apply Damage Rolls (+/-)</span>
+                <span class="app-menu-toggle">
+                    <input type="checkbox" id="setting-toggle-quick-apply-damage" class="app-menu-toggle-input" role="switch" checked />
                     <span class="app-menu-toggle-track" aria-hidden="true"></span>
                 </span>
             </label>
@@ -2279,6 +2295,9 @@
                     <div class="trainer-poks" id="trainer-poks-remaining"><!-- Team 2, 3, ... --></div>
                 </div>
             </fieldset>
+            <!-- Mini Calculator Widget -->
+            <fieldset id="mini-calc-container" class="mini-calc-box mini-calc--hidden" tabindex="0" aria-label="Mini Calculator" role="region">
+            </fieldset>
         </div>
     </div>
     <div class="right-side-pannel side-pannel">
@@ -2470,10 +2489,12 @@
     </div>
     <script type="text/javascript" src="./js/dark-theme-toggle.js?"></script>
     <script type="text/javascript" src="./js/mgba_sync.js"></script>
-    <script type="text/javascript" src="./js/move_categories.js"></script>
-    <script type="text/javascript" src="./js/move_search.js"></script>
-    <script type="text/javascript" src="./js/probability_calc.js"></script>
-    <script type="text/javascript" src="./js/probability_calc_ui.js"></script>
+    <script type="text/javascript" src="./js/move_categories.js?v=pills"></script>
+    <script type="text/javascript" src="./js/move_search.js?v=legend2"></script>
+    <script type="text/javascript" src="./js/probability_calc.js?v=pills"></script>
+    <script type="text/javascript" src="./js/probability_calc_ui.js?v=pills"></script>
+    <script type="text/javascript" src="./js/mini_calc.js?v=pills"></script>
+    <script type="text/javascript" src="./js/quick_apply_damage.js?v=1"></script>
 
 </body>
 

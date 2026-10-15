@@ -52,6 +52,7 @@
      * ====================================================================== */
     var probaState = {
         hp: '',
+        minRemainingHP: '0',
         rows: []   // [{name: string, rolls: string}]
     };
 
@@ -61,14 +62,16 @@
             if (raw) {
                 var parsed = JSON.parse(raw);
                 if (parsed.rows && Array.isArray(parsed.rows)) {
-                    probaState.hp   = parsed.hp || '';
-                    probaState.rows = parsed.rows;
+                    probaState.hp             = parsed.hp || '';
+                    probaState.minRemainingHP = (parsed.minRemainingHP !== undefined && parsed.minRemainingHP !== null) ? String(parsed.minRemainingHP) : '0';
+                    probaState.rows           = parsed.rows;
                     return;
                 }
             }
         } catch (e) {}
-        probaState.hp   = '';
-        probaState.rows = [];
+        probaState.hp             = '';
+        probaState.minRemainingHP = '0';
+        probaState.rows           = [];
     }
 
     function saveProbaState() {
@@ -93,8 +96,14 @@
             '    <button type="button" id="proba-modal-close" title="Close" aria-label="Close">&times;</button>',
             '  </div>',
             '  <div class="proba-hp-row">',
-            '    <label for="proba-hp-input">Target HP:</label>',
-            '    <input type="number" id="proba-hp-input" min="1" placeholder="e.g. 241" />',
+            '    <div class="proba-hp-field">',
+            '      <label for="proba-hp-input">Initial HP / PV Actuels:</label>',
+            '      <input type="number" id="proba-hp-input" min="1" placeholder="e.g. 241" />',
+            '    </div>',
+            '    <div class="proba-hp-field">',
+            '      <label for="proba-input-min-remaining-hp">Min Left HP / PV Restants Min:</label>',
+            '      <input type="number" id="proba-input-min-remaining-hp" min="0" placeholder="0" value="0" />',
+            '    </div>',
             '  </div>',
             '  <div id="proba-moves-list"></div>',
             '  <button type="button" id="proba-add-row-btn">+ Add Move</button>',
@@ -231,6 +240,8 @@
     function renderHP() {
         var hpInput = document.getElementById('proba-hp-input');
         if (hpInput) hpInput.value = probaState.hp || '';
+        var minRemInput = document.getElementById('proba-input-min-remaining-hp');
+        if (minRemInput) minRemInput.value = probaState.minRemainingHP || '0';
     }
 
     function renderModalRows() {
@@ -312,9 +323,13 @@
         var hpEl = document.getElementById('proba-hp-input');
         var hp = parseInt(hpEl ? hpEl.value : '', 10);
         if (isNaN(hp) || hp <= 0) {
-            resultArea.innerHTML = '<span class="proba-result-placeholder">Enter a valid Target HP</span>';
+            resultArea.innerHTML = '<span class="proba-result-placeholder">Enter a valid Initial HP</span>';
             return;
         }
+
+        var minRemEl = document.getElementById('proba-input-min-remaining-hp');
+        var minRem = parseInt(minRemEl ? minRemEl.value : '0', 10);
+        if (isNaN(minRem) || minRem < 0) minRem = 0;
 
         var validRolls = [];
         for (var i = 0; i < probaState.rows.length; i++) {
@@ -328,23 +343,58 @@
         }
 
         try {
-            var prob = PC.computeMultiRollKillProba(validRolls, hp);
-            var rounded = prob.toFixed(4);
+            var res = PC.computeMultiRollThresholdProba(validRolls, hp, minRem);
             var mainLine, fracLine;
 
-            if (prob <= 0) {
-                resultArea.classList.add('proba-result--zero');
-                mainLine = '0% chance to KO';
-                fracLine = 'Impossible (0%)';
-            } else if (prob >= 100) {
-                resultArea.classList.add('proba-result--ready');
-                mainLine = '100% chance to KO';
-                fracLine = 'Guaranteed KO (1/1)';
+            function formatPct(p) {
+                if (p <= 0) return '0%';
+                if (p >= 100) return '100%';
+                if (p < 0.01) return p.toFixed(4) + '%';
+                var s = p.toFixed(2);
+                return s + '%';
+            }
+
+            if (minRem === 0) {
+                // Standard KO mode
+                var prob = res.killProba;
+                var rounded = formatPct(prob);
+
+                if (prob <= 0) {
+                    resultArea.classList.add('proba-result--zero');
+                    mainLine = '0% chance to KO';
+                    fracLine = 'Impossible (0%)';
+                } else if (prob >= 100) {
+                    resultArea.classList.add('proba-result--ready');
+                    mainLine = '100% chance to KO';
+                    fracLine = 'Guaranteed KO (1/1)';
+                } else {
+                    resultArea.classList.add('proba-result--ready');
+                    mainLine = rounded + ' chance to KO';
+                    var n = Math.round(100 / prob);
+                    fracLine = '~1/' + n + ' chance de KO';
+                }
             } else {
-                resultArea.classList.add('proba-result--ready');
-                mainLine = rounded + '% chance to KO';
-                var n = Math.round(100 / prob);
-                fracLine = '~1/' + n + ' chance de KO';
+                // Threshold mode: leave at least minRem HP vs drop below minRem HP
+                var surv = res.surviveProba;
+                var drop = res.dropBelowProba;
+                var roundedSurv = formatPct(surv);
+                var roundedDrop = formatPct(drop);
+
+                if (surv >= 100) {
+                    resultArea.classList.add('proba-result--ready');
+                    mainLine = '100% chance to leave at least ' + minRem + ' HP';
+                    fracLine = 'Guaranteed survival (1/1) \u2022 0% chance to drop below ' + minRem + ' HP';
+                } else if (surv <= 0) {
+                    resultArea.classList.add('proba-result--zero');
+                    mainLine = '0% chance to leave at least ' + minRem + ' HP';
+                    fracLine = 'Impossible to survive (0%) \u2022 100% chance to drop below ' + minRem + ' HP';
+                } else {
+                    resultArea.classList.add('proba-result--ready');
+                    mainLine = roundedSurv + ' chance to leave at least ' + minRem + ' HP (' + roundedDrop + ' to drop below)';
+                    var nDrop = Math.max(1, Math.round(100 / drop));
+                    var nSurv = Math.max(1, Math.round(100 / surv));
+                    fracLine = '~1/' + nDrop + ' chance to drop below ' + minRem + ' HP' + (nSurv > 1 ? ' (\u22481/' + nSurv + ' to survive)' : '');
+                }
             }
 
             resultArea.innerHTML =
@@ -566,11 +616,20 @@
             }
         });
 
-        // HP input
+        // HP inputs
         var hpInput = document.getElementById('proba-hp-input');
         if (hpInput) {
             hpInput.addEventListener('input', function () {
                 probaState.hp = hpInput.value;
+                saveProbaState();
+                updateProbaResult();
+            });
+        }
+
+        var minRemInput = document.getElementById('proba-input-min-remaining-hp');
+        if (minRemInput) {
+            minRemInput.addEventListener('input', function () {
+                probaState.minRemainingHP = minRemInput.value;
                 saveProbaState();
                 updateProbaResult();
             });
