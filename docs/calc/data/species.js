@@ -1743,7 +1743,7 @@ var ADV_PATCH = {
     Qwilfish: { abilities: { 0: 'Poison Point' } },
     Raikou: { abilities: { 0: 'Pressure' } },
     Remoraid: { abilities: { 0: 'Hustle' } },
-    Scizor: { abilities: { 0: 'Technician' } },
+    Scizor: { abilities: { 0: 'Swarm' } },
     Sentret: { abilities: { 0: 'Run Away' } },
     Shuckle: { abilities: { 0: 'Sturdy' } },
     Skarmory: { abilities: { 0: 'Keen Eye' } },
@@ -1867,7 +1867,7 @@ var ADV_PATCH = {
         types: ['Fire', 'Fighting'],
         bs: { hp: 80, at: 120, df: 70, sa: 110, sd: 70, sp: 80 },
         weightkg: 52,
-        abilities: { 0: 'Speed Boost' }
+        abilities: { 0: 'Blaze' }
     },
     Breloom: {
         types: ['Grass', 'Fighting'],
@@ -2453,7 +2453,7 @@ var ADV_PATCH = {
         types: ['Water', 'Dark'],
         bs: { hp: 70, at: 120, df: 40, sa: 95, sd: 40, sp: 95 },
         weightkg: 88.8,
-        abilities: { 0: 'Speed Boost' }
+        abilities: { 0: 'Rough Skin' }
     },
     Shedinja: {
         types: ['Bug', 'Ghost'],
@@ -5535,7 +5535,7 @@ var XY_PATCH = {
         types: ['Grass', 'Ice'],
         bs: { hp: 90, at: 132, df: 105, sa: 132, sd: 105, sp: 30 },
         weightkg: 185,
-        abilities: { 0: 'Soundproof' },
+        abilities: { 0: 'Snow Warning' },
         baseSpecies: 'Abomasnow'
     },
     'Absol-Mega': {
@@ -5612,7 +5612,7 @@ var XY_PATCH = {
         types: ['Fire', 'Fighting'],
         bs: { hp: 80, at: 160, df: 80, sa: 130, sd: 80, sp: 100 },
         weightkg: 52,
-        abilities: { 0: 'Inner Focus' },
+        abilities: { 0: 'Speed Boost' },
         baseSpecies: 'Blaziken'
     },
     'Camerupt-Mega': {
@@ -5633,7 +5633,7 @@ var XY_PATCH = {
         types: ['Fire', 'Flying'],
         bs: { hp: 78, at: 104, df: 78, sa: 159, sd: 115, sp: 100 },
         weightkg: 100.5,
-        abilities: { 0: 'Solar Power' },
+        abilities: { 0: 'Drought' },
         baseSpecies: 'Charizard'
     },
     'Crucibelle-Mega': {
@@ -5827,7 +5827,7 @@ var XY_PATCH = {
         types: ['Grass', 'Dragon'],
         bs: { hp: 70, at: 110, df: 75, sa: 145, sd: 85, sp: 145 },
         weightkg: 55.2,
-        abilities: { 0: 'Limber' },
+        abilities: { 0: 'Lightning Rod' },
         baseSpecies: 'Sceptile'
     },
     'Scizor-Mega': {
@@ -5869,7 +5869,7 @@ var XY_PATCH = {
         types: ['Rock', 'Dark'],
         bs: { hp: 100, at: 164, df: 150, sa: 95, sd: 120, sp: 71 },
         weightkg: 255,
-        abilities: { 0: 'Battle Armor' },
+        abilities: { 0: 'Sand Stream' },
         baseSpecies: 'Tyranitar'
     },
     'Venusaur-Mega': {
@@ -8884,7 +8884,7 @@ var PLA_PATCH = {
     },
     Kleavor: {
         types: ['Bug', 'Rock'],
-        bs: { hp: 70, at: 135, df: 95, sa: 45, sd: 75, sp: 85 },
+        bs: { hp: 70, at: 135, df: 95, sa: 45, sd: 70, sp: 85 },
         weightkg: 89,
         abilities: { 0: 'Swarm' }
     },
@@ -8898,7 +8898,7 @@ var PLA_PATCH = {
     Overqwil: {
         types: ['Dark', 'Poison'],
         bs: { hp: 85, at: 115, df: 95, sa: 65, sd: 65, sp: 85 },
-        weightkg: 3.9,
+        weightkg: 60.5,
         abilities: { 0: 'Poison Point' }
     },
     'Palkia-Origin': {
@@ -9872,21 +9872,21 @@ var SV_PATCH = {
     'Tauros-Paldea-Combat': {
         types: ['Fighting'],
         bs: { hp: 75, at: 110, df: 105, sa: 30, sd: 70, sp: 100 },
-        weightkg: 88.4,
+        weightkg: 115,
         abilities: { 0: 'Intimidate' },
         baseSpecies: 'Tauros'
     },
     'Tauros-Paldea-Blaze': {
         types: ['Fighting', 'Fire'],
         bs: { hp: 75, at: 110, df: 105, sa: 30, sd: 70, sp: 100 },
-        weightkg: 88.4,
+        weightkg: 85,
         abilities: { 0: 'Intimidate' },
         baseSpecies: 'Tauros'
     },
     'Tauros-Paldea-Aqua': {
         types: ['Fighting', 'Water'],
         bs: { hp: 75, at: 110, df: 105, sa: 30, sd: 70, sp: 100 },
-        weightkg: 88.4,
+        weightkg: 110,
         abilities: { 0: 'Intimidate' },
         baseSpecies: 'Tauros'
     },
@@ -10101,7 +10101,7 @@ var ZA_PATCH = {
             at: 75,
             df: 110,
             sa: 175,
-            sd: 110,
+            sd: 100,
             sp: 90
         },
         weightkg: 69.6,
@@ -10125,7 +10125,7 @@ var ZA_PATCH = {
         },
         weightkg: 90.0,
         abilities: {
-            '0': 'Bulletproof'
+            '0': 'Battle Armor'
         },
         baseSpecies: 'Chesnaught'
     },
@@ -10190,7 +10190,7 @@ var ZA_PATCH = {
         },
         weightkg: 39.0,
         abilities: {
-            '0': 'Serene Grace'
+            '0': 'Levitate'
         },
         baseSpecies: 'Delphox'
     },
@@ -10321,7 +10321,7 @@ var ZA_PATCH = {
         },
         weightkg: 99.0,
         abilities: {
-            '0': 'Sharpness'
+            '0': 'Battle Armor'
         },
         baseSpecies: 'Falinks'
     },
@@ -10386,7 +10386,7 @@ var ZA_PATCH = {
         bs: { hp: 108, at: 130, df: 85, sa: 141, sd: 85, sp: 151 },
         weightkg: 99.0,
         abilities: {
-            0: 'Aura Break'
+            0: 'Sand Veil'
         },
         baseSpecies: 'Garchomp'
     },
@@ -10432,7 +10432,7 @@ var ZA_PATCH = {
         },
         weightkg: 40.0,
         abilities: {
-            '0': 'Sniper'
+            '0': 'Technician'
         },
         baseSpecies: 'Greninja'
     },
@@ -10469,7 +10469,7 @@ var ZA_PATCH = {
         bs: { hp: 70, at: 100, df: 70, sa: 164, sd: 70, sp: 151 },
         weightkg: 49.4,
         abilities: {
-            0: 'Aura Break'
+            0: 'Steadfast'
         },
         baseSpecies: 'Lucario'
     },
@@ -10477,7 +10477,6 @@ var ZA_PATCH = {
         types: ['Steel', 'Fairy'],
         bs: { hp: 80, at: 125, df: 115, sa: 170, sd: 115, sp: 95 },
         weightkg: 248.1,
-        gender: 'N',
         abilities: {
             0: 'Soul-Heart'
         },
@@ -10487,7 +10486,6 @@ var ZA_PATCH = {
         types: ['Steel', 'Fairy'],
         bs: { hp: 80, at: 125, df: 115, sa: 170, sd: 115, sp: 95 },
         weightkg: 248.1,
-        gender: 'N',
         abilities: {
             0: 'Soul-Heart'
         },
@@ -10564,7 +10562,7 @@ var ZA_PATCH = {
         bs: { hp: 60, at: 135, df: 95, sa: 90, sd: 95, sp: 110 },
         weightkg: 38.0,
         abilities: {
-            0: 'Motor Drive'
+            0: 'Static'
         },
         baseSpecies: 'Raichu'
     },
@@ -10573,7 +10571,7 @@ var ZA_PATCH = {
         bs: { hp: 60, at: 100, df: 55, sa: 160, sd: 80, sp: 130 },
         weightkg: 26.0,
         abilities: {
-            0: 'Volt Absorb'
+            0: 'Static'
         },
         baseSpecies: 'Raichu'
     },
