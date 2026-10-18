@@ -2825,6 +2825,18 @@ html.hide-feature-quick-apply-damage .quick-apply-damage-row {
     background-color: rgba(25, 118, 210, 0.16);
 }
 
+.move-search-dropdown-item.is-ability {
+    font-weight: 600;
+    color: #28a745;
+    background-color: rgba(40, 167, 69, 0.06);
+    border-left: 3px solid #28a745;
+    padding-left: 7px;
+}
+.move-search-dropdown-item.is-ability:hover,
+.move-search-dropdown-item.is-ability:focus {
+    background-color: rgba(40, 167, 69, 0.16);
+}
+
 /* ── Feature Visibility Toggles ──────────────────────────────────────────── */
 .hidden-by-setting,
 html.hide-feature-move-filter #move-search-container,

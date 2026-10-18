@@ -120,6 +120,20 @@
             moves: [
                 "Fake Out", "Extreme Speed", "First Impression", "Feint", "Mach Punch", "Bullet Punch", "Ice Shard", "Shadow Sneak", "Aqua Jet", "Quick Attack", "Accelerock", "Sucker Punch", "Vacuum Wave", "Thunderclap", "Zippy Zap"
             ]
+        },
+        {
+            id: "default-atk-drop-ability",
+            name: "Atk Drop Ability",
+            isDefault: true,
+            items: ["Intimidate", "Illuminate"],
+            moves: ["Intimidate", "Illuminate"]
+        },
+        {
+            id: "default-crit-immune-ability",
+            name: "Crit Immune",
+            isDefault: true,
+            items: ["Shell Armor", "Magma Armor", "Battle Armor", "Leaf Guard"],
+            moves: ["Shell Armor", "Magma Armor", "Battle Armor", "Leaf Guard"]
         }
     ];
 
@@ -134,7 +148,12 @@
             if (raw) _userCategories = JSON.parse(raw) || [];
         } catch (e) { _userCategories = []; }
         _userCategories = _userCategories.filter(function (c) {
-            return c && typeof c.name === 'string' && Array.isArray(c.moves);
+            return c && typeof c.name === 'string' && (Array.isArray(c.items) || Array.isArray(c.moves));
+        }).map(function (c) {
+            var list = c.items || c.moves || [];
+            c.items = list;
+            c.moves = list;
+            return c;
         });
     }
 
@@ -161,10 +180,12 @@
         for (var i = 0; i < DEFAULT_MOVE_CATEGORIES.length; i++) {
             if (DEFAULT_MOVE_CATEGORIES[i].id === id) {
                 var d = DEFAULT_MOVE_CATEGORIES[i];
+                var list = (d.items || d.moves || []).slice();
                 return {
                     id: d.id,
                     name: d.name,
-                    moves: d.moves.slice(),
+                    items: list.slice(),
+                    moves: list.slice(),
                     isDefault: true,
                     isOverridden: false
                 };
@@ -193,18 +214,22 @@
             }
 
             if (override) {
+                var oList = (override.items || override.moves || []).slice();
                 result.push({
                     id: def.id,
                     name: override.name,
-                    moves: override.moves.slice(),
+                    items: oList.slice(),
+                    moves: oList.slice(),
                     isDefault: true,
                     isOverridden: true
                 });
             } else {
+                var dList = (def.items || def.moves || []).slice();
                 result.push({
                     id: def.id,
                     name: def.name,
-                    moves: def.moves.slice(),
+                    items: dList.slice(),
+                    moves: dList.slice(),
                     isDefault: true,
                     isOverridden: false
                 });
@@ -215,10 +240,12 @@
         for (var j = 0; j < _userCategories.length; j++) {
             var userCat = _userCategories[j];
             if (!matchedUserIds[userCat.id]) {
+                var uList = (userCat.items || userCat.moves || []).slice();
                 result.push({
                     id: userCat.id,
                     name: userCat.name,
-                    moves: userCat.moves.slice(),
+                    items: uList.slice(),
+                    moves: uList.slice(),
                     isDefault: false,
                     isOverridden: false
                 });
@@ -236,20 +263,66 @@
         return null;
     }
 
+    /**
+     * Evaluate a Pokémon against a category (moves + abilities).
+     *
+     * @param {Object} category - Category definition with .items or .moves
+     * @param {Object|string} monOrDataId - Mon object or dataId string
+     * @param {HTMLElement} [el] - Optional DOM element for DOM-based lookups
+     * @returns {'KNOWN'|'TUTOR'|'TM'|'SCALE'|null}
+     */
+    function evaluateCategory(category, monOrDataId, el) {
+        if (!category) return null;
+        var items = category.items || category.moves || [];
+        if (!items.length) return null;
+
+        if (typeof window.MoveSearch !== 'undefined' && typeof window.MoveSearch.evaluateCategory === 'function') {
+            return window.MoveSearch.evaluateCategory(category, monOrDataId, el);
+        }
+
+        // Direct fallback evaluation
+        var ability = '';
+        var moves = [];
+        if (monOrDataId && typeof monOrDataId === 'object') {
+            ability = monOrDataId.ability || monOrDataId.abilityName || '';
+            moves = Array.isArray(monOrDataId.moves) ? monOrDataId.moves : [];
+        }
+        if (ability) {
+            var abKey = ability.toLowerCase().replace(/[^a-z0-9]/g, '');
+            for (var i = 0; i < items.length; i++) {
+                if (items[i].toLowerCase().replace(/[^a-z0-9]/g, '') === abKey) {
+                    return 'KNOWN';
+                }
+            }
+        }
+        for (var m = 0; m < moves.length; m++) {
+            var mKey = moves[m].toLowerCase().replace(/[^a-z0-9]/g, '');
+            for (var j = 0; j < items.length; j++) {
+                if (items[j].toLowerCase().replace(/[^a-z0-9]/g, '') === mKey) {
+                    return 'KNOWN';
+                }
+            }
+        }
+        return null;
+    }
+
     // ---- CRUD ---------------------------------------------------------------
 
-    function _createUserCategory(name, moves) {
-        var cat = { id: _uid(), name: name.trim(), moves: moves.slice(), isDefault: false };
+    function _createUserCategory(name, movesOrItems) {
+        var list = (movesOrItems || []).slice();
+        var cat = { id: _uid(), name: name.trim(), items: list.slice(), moves: list.slice(), isDefault: false };
         _userCategories.push(cat);
         _save();
         return cat;
     }
 
-    function _updateUserCategory(id, name, moves) {
+    function _updateUserCategory(id, name, movesOrItems) {
+        var list = (movesOrItems || []).slice();
         for (var i = 0; i < _userCategories.length; i++) {
             if (_userCategories[i].id === id) {
                 _userCategories[i].name = name.trim();
-                _userCategories[i].moves = moves.slice();
+                _userCategories[i].items = list.slice();
+                _userCategories[i].moves = list.slice();
                 _save();
                 return true;
             }
@@ -257,7 +330,8 @@
         return false;
     }
 
-    function _saveDefaultOverride(defaultId, name, moves) {
+    function _saveDefaultOverride(defaultId, name, movesOrItems) {
+        var list = (movesOrItems || []).slice();
         var found = false;
         var def = _getDefaultCategory(defaultId);
         for (var i = 0; i < _userCategories.length; i++) {
@@ -265,7 +339,8 @@
             if (uc.id === defaultId || (def && uc.name && uc.name.trim().toLowerCase() === def.name.toLowerCase())) {
                 uc.id = defaultId;
                 uc.name = name.trim();
-                uc.moves = moves.slice();
+                uc.items = list.slice();
+                uc.moves = list.slice();
                 uc.isDefault = true;
                 found = true;
                 break;
@@ -275,7 +350,8 @@
             _userCategories.push({
                 id: defaultId,
                 name: name.trim(),
-                moves: moves.slice(),
+                items: list.slice(),
+                moves: list.slice(),
                 isDefault: true
             });
         }
@@ -326,7 +402,7 @@
         _modalEl.innerHTML =
             '<div id="mc-modal" role="document">' +
               '<div id="mc-modal-header">' +
-                '<h2 id="mc-modal-title">Move Categories</h2>' +
+                '<h2 id="mc-modal-title">Move &amp; Ability Categories</h2>' +
                 '<button type="button" id="mc-modal-close" aria-label="Close">&#x2715;</button>' +
               '</div>' +
               '<div id="mc-modal-body">' +
@@ -341,12 +417,12 @@
                   '<div id="mc-editor-form" hidden>' +
                     '<label class="mc-field-label" for="mc-cat-name">Category name</label>' +
                     '<input id="mc-cat-name" class="mc-text-input" type="text" maxlength="40" autocomplete="off" spellcheck="false" placeholder="e.g. Hazards">' +
-                    '<label class="mc-field-label" for="mc-moves-input">Moves <span class="mc-label-hint">(one per line)</span></label>' +
-                    '<textarea id="mc-moves-input" class="mc-textarea" rows="10" placeholder="Stealth Rock&#10;Spikes&#10;Toxic Spikes"></textarea>' +
+                    '<label class="mc-field-label" for="mc-moves-input">Moves &amp; Abilities <span class="mc-label-hint">(one per line)</span></label>' +
+                    '<textarea id="mc-moves-input" class="mc-textarea" rows="10" placeholder="Stealth Rock&#10;Intimidate&#10;Toxic Spikes"></textarea>' +
                     '<div id="mc-editor-actions">' +
                       '<button type="button" id="mc-save-btn"    class="mc-btn mc-btn-primary">Save</button>' +
                       '<button type="button" id="mc-cancel-btn"  class="mc-btn">Cancel</button>' +
-                      '<button type="button" id="mc-restore-btn" class="mc-btn mc-btn-warning" hidden title="Restore built-in default moves">Restore Default</button>' +
+                      '<button type="button" id="mc-restore-btn" class="mc-btn mc-btn-warning" hidden title="Restore built-in default items">Restore Default</button>' +
                       '<button type="button" id="mc-delete-btn"  class="mc-btn mc-btn-danger" hidden>Delete</button>' +
                     '</div>' +
                     '<p id="mc-error-msg" class="mc-error-msg" hidden></p>' +
@@ -449,9 +525,10 @@
                     }
                 }
 
+                var itemCount = (cat.items || cat.moves || []).length;
                 var cs = document.createElement('span');
                 cs.className = 'mc-list-item-count';
-                cs.textContent = cat.moves.length + ' move' + (cat.moves.length !== 1 ? 's' : '');
+                cs.textContent = itemCount + ' item' + (itemCount !== 1 ? 's' : '');
 
                 li.appendChild(ns);
                 li.appendChild(cs);
@@ -492,7 +569,8 @@
 
         if (cat) {
             nameInput.value = cat.name;
-            movesTA.value   = cat.moves.join('\n');
+            var catItems = cat.items || cat.moves || [];
+            movesTA.value   = catItems.join('\n');
 
             if (cat.isDefault) {
                 if (delBtn) delBtn.setAttribute('hidden', '');
@@ -531,7 +609,7 @@
             if (m) moves.push(m);
         }
         if (!name)         { _showError('Please enter a category name.'); nameInput.focus(); return; }
-        if (!moves.length) { _showError('Please add at least one move.'); movesTA.focus();   return; }
+        if (!moves.length) { _showError('Please add at least one move or ability.'); movesTA.focus(); return; }
 
         if (_editingId) {
             if (_isDefaultId(_editingId)) {
@@ -565,7 +643,7 @@
         if (!_editingId || !_isDefaultId(_editingId)) return;
         var def = _getDefaultCategory(_editingId);
         if (!def) return;
-        if (!confirm('Restore "' + def.name + '" to its default built-in moves?')) return;
+        if (!confirm('Restore "' + def.name + '" to its default built-in items?')) return;
         _restoreDefault(_editingId);
         _renderList();
         _openEditor(_editingId);
@@ -604,7 +682,7 @@
             btn.id        = 'header-categories-button';
             tabGroup.appendChild(btn);
         }
-        btn.title     = 'Manage custom move categories';
+        btn.title     = 'Manage custom move and ability categories';
         btn.innerHTML = 'Move<br>Categories';
         btn.onclick   = _openModal;
     }
@@ -630,6 +708,7 @@
         getDefaults:       function () { return DEFAULT_MOVE_CATEGORIES.slice(); },
         restoreDefault:    _restoreDefault,
         openManager:       _openModal,
+        evaluateCategory:  evaluateCategory,
         get onCategoriesChange() { return _onChange; },
         set onCategoriesChange(fn) { _onChange = fn; }
     };

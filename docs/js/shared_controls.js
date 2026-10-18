@@ -3105,6 +3105,7 @@ function addBoxed(poke, boxListId) {
 
 	var existing = document.getElementById(id);
 	if (existing) {
+		if (poke && !existing.mon) existing.mon = poke;
 		if (existing.parentNode === listEl) return;
 		if (existing.closest && existing.closest("#team-poke-list")) {
 			return;
@@ -3117,9 +3118,10 @@ function addBoxed(poke, boxListId) {
 	newPoke.id = id;
 	newPoke.className = "trainer-pok left-side";
 	setPokemonIconImgSrc(newPoke, poke, false);
-	newPoke.dataset.id = `${poke.name} (${poke.nameProp})`
+	newPoke.dataset.id = `${poke.name} (${poke.nameProp})`;
+	newPoke.mon = poke;
 	newPoke.addEventListener("dragstart", dragstart_handler);
-	listEl.appendChild(newPoke)
+	listEl.appendChild(newPoke);
 	queueBox2SetIdsSync();
 }
 
