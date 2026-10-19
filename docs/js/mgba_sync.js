@@ -390,10 +390,14 @@ function loadSettings() {
 function injectUI() {
     const wrapper = document.getElementById("import-1_wrapper");
     if (!wrapper) return; // Page may not have the import panel
+    if (document.getElementById("mgba-sync-container")) return;
 
     const syncBox = document.createElement("div");
     syncBox.className = "mgba-sync-container";
     syncBox.id = "mgba-sync-container";
+    if (document.documentElement.classList.contains("hide-feature-mgba-sync")) {
+        syncBox.classList.add("hidden-by-setting");
+    }
     syncBox.style.cssText = [
         "margin-bottom:15px",
         "padding:10px",
@@ -402,6 +406,10 @@ function injectUI() {
     ].join(";");
 
     syncBox.innerHTML = `
+        <!-- Auto-Sync Header Badge with Companion Repo Link -->
+        <div style="display:flex; justify-content:center; align-items:center; margin-bottom:10px;">
+            <a href="https://github.com/Baat01/vs-link-null" target="_blank" rel="noopener noreferrer" class="mgba-sync-title-badge" title="Accéder au dépôt mGBA Auto-Sync (vs-link-null)">Auto-Sync</a>
+        </div>
         <!-- Row 1: action buttons + live status -->
         <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:8px;">
             <button id="mgba-sync-now-btn"
@@ -478,10 +486,16 @@ function injectUI() {
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 
-document.addEventListener("DOMContentLoaded", () => {
+function initMgbaSync() {
     loadSettings();
     injectUI();
     if (SyncState.ENABLED) {
         pollServer();
     }
-});
+}
+
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initMgbaSync);
+} else {
+    initMgbaSync();
+}

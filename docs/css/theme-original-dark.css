@@ -84,3 +84,24 @@ html.theme-original-dark .select2-drop.select2-drop-above.select2-drop-active,
 html.theme-original-dark input.select2-input {
     border-color: var(--border-ui-muted) !important;
 }
+
+html.theme-original-dark .btn-reset-full-hp {
+    border: 1px solid var(--border-ui) !important;
+    background-color: #242424;
+}
+html.theme-original-dark .btn-reset-full-hp:hover {
+    border-color: var(--border-ui-hover) !important;
+    background-color: #303030;
+}
+html.theme-original-dark .mgba-sync-title-badge {
+    border: 1px solid var(--border-ui) !important;
+    background-color: #252525;
+}
+html.theme-original-dark .mgba-sync-title-badge:hover {
+    border-color: var(--border-ui-hover) !important;
+    background-color: #2f2f2f;
+}
+html.theme-original-dark .footer-resource-links li:not(:last-child)::after {
+    color: var(--border-ui-muted);
+}
+

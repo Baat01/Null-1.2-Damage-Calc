@@ -2548,6 +2548,29 @@ $(document).on("keydown", ".hp-fractions-container .hp-frac-item, .hp-fractions-
 	}
 });
 
+// Reset to Full HP button
+$(document).on("click", ".btn-reset-full-hp", function (e) {
+	e.preventDefault();
+	var $panel = $(this).closest(".poke-info");
+	if (!$panel.length) {
+		$panel = $(this).closest("#p1, #p2");
+	}
+	if (!$panel.length) return;
+
+	var $currentHpInput = $panel.find(".current-hp");
+	if (!$currentHpInput.length) return;
+
+	var maxHp = parseInt($panel.find(".max-hp").first().text(), 10);
+	if (isNaN(maxHp) || maxHp <= 0) {
+		maxHp = parseInt($panel.find(".hp .total").first().text(), 10) || 0;
+	}
+	if (maxHp <= 0) return;
+
+	$currentHpInput.val(maxHp);
+	calcPercentHP($currentHpInput.parent(), maxHp, maxHp);
+	$currentHpInput.trigger("input").trigger("change");
+});
+
 function calcHP(poke) {
 	var total = calcStat(poke, "hp");
 	var $maxHP = poke.find(".max-hp");
@@ -4162,7 +4185,7 @@ function applyFeatureVisibility(feature, isVisible) {
 		}
 	} else if (feature === "showHpFractions") {
 		doc.classList.toggle("hide-feature-hp-fractions", !isVisible);
-		var fracEls = document.querySelectorAll(".hp-fractions-container");
+		var fracEls = document.querySelectorAll(".hp-fractions-container, .btn-reset-full-hp");
 		for (var j = 0; j < fracEls.length; j++) {
 			fracEls[j].classList.toggle("hidden-by-setting", !isVisible);
 		}

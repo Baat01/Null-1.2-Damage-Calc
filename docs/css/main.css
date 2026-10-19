@@ -2842,8 +2842,93 @@ html.hide-feature-quick-apply-damage .quick-apply-damage-row {
 html.hide-feature-move-filter #move-search-container,
 html.hide-feature-mgba-sync #mgba-sync-container,
 html.hide-feature-mgba-sync .mgba-sync-container,
-html.hide-feature-hp-fractions .hp-fractions-container {
+html.hide-feature-hp-fractions .hp-fractions-container,
+html.hide-feature-hp-fractions .btn-reset-full-hp {
     display: none !important;
+}
+
+/* ── Reset to Full HP Button ─────────────────────────────────────────────── */
+.btn-reset-full-hp {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 6px;
+    font-size: 0.8em;
+    font-weight: 600;
+    line-height: 1.2;
+    cursor: pointer;
+    border-radius: 3px;
+    margin-left: 6px;
+    vertical-align: middle;
+    background-color: #f3f4f6;
+    color: #374151;
+    border: 1px solid #d1d5db;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.08s ease;
+}
+.btn-reset-full-hp:hover {
+    background-color: #e5e7eb;
+    border-color: #9ca3af;
+    color: #111827;
+}
+.btn-reset-full-hp:active {
+    transform: scale(0.95);
+    background-color: #d1d5db;
+}
+.btn-reset-full-hp:focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: 1px;
+}
+
+/* ── Auto-Sync Framed Header Badge ───────────────────────────────────────── */
+.mgba-sync-title-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3px 14px;
+    font-size: 0.85em;
+    font-weight: 700;
+    text-decoration: none !important;
+    letter-spacing: 0.5px;
+    border: 1px solid #c0c0c0;
+    border-radius: 12px;
+    background-color: #f7f9fa;
+    color: #333333;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s ease;
+}
+.mgba-sync-title-badge:hover {
+    background-color: #e8eef8;
+    border-color: #2563eb;
+    color: #2563eb;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.15);
+    text-decoration: none !important;
+}
+.mgba-sync-title-badge:active {
+    transform: scale(0.97);
+}
+
+/* ── Footer Community Resource Links ─────────────────────────────────────── */
+.footer-resource-links {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 10px;
+    list-style: none;
+    padding: 0;
+    margin: 8px 0 10px 0;
+    font-size: 0.95em;
+}
+.footer-resource-links li {
+    display: inline-flex;
+    align-items: center;
+}
+.footer-resource-links li:not(:last-child)::after {
+    content: "|";
+    margin-left: 10px;
+    color: #888888;
+    opacity: 0.7;
+    pointer-events: none;
 }
 
 /* ── 8 Moveslots Mode ─────────────────────────────────────────────────────── */
