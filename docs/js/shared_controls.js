@@ -1741,6 +1741,13 @@ $(".set-selector").change(function () {
 			var p1sprite = document.getElementById("p1mon");
 			if (p1sprite) topPokemonIcon(p1Set, p1sprite);
 		}
+		if (typeof isGuigzSpecialEnabled === "function" && isGuigzSpecialEnabled()) {
+			setTimeout(function () {
+				if (typeof checkAndPlayGuigzSpecial === "function") {
+					checkAndPlayGuigzSpecial($("#p2"));
+				}
+			}, 60);
+		}
 	}
 });
 
@@ -4128,6 +4135,7 @@ function getNullCalcSettings() {
 				showOverlapRoll:       parsed.showOverlapRoll       === true,
 				showMiniCalc:          parsed.showMiniCalc          === true,
 				showQuickApplyDamage:  parsed.showQuickApplyDamage  !== false,
+				enableGuigzSpecial:    parsed.enableGuigzSpecial    === true,
 				moveFilterMethods: parsed.moveFilterMethods || {
 					known: true,
 					tutor: true,
@@ -4145,6 +4153,7 @@ function getNullCalcSettings() {
 		showOverlapRoll:       false,
 		showMiniCalc:          false,
 		showQuickApplyDamage:  true,
+		enableGuigzSpecial:    false,
 		moveFilterMethods: {
 			known: true,
 			tutor: true,
@@ -4226,6 +4235,7 @@ function initFeatureVisibilitySettings() {
 	var hpFracCb      = document.getElementById("setting-toggle-hp-fractions");
 	var moves8Cb      = document.getElementById("setting-toggle-8-moves");
 	var quickApplyCb  = document.getElementById("setting-toggle-quick-apply-damage");
+	var guigzCb       = document.getElementById("setting-toggle-guigz-special");
 
 	applyFeatureVisibility("showMoveFilter", settings.showMoveFilter);
 	applyFeatureVisibility("showMgbaSync", settings.showMgbaSync);
@@ -4275,6 +4285,17 @@ function initFeatureVisibilitySettings() {
 			settings.showQuickApplyDamage = quickApplyCb.checked;
 			saveNullCalcSettings(settings);
 			applyFeatureVisibility("showQuickApplyDamage", settings.showQuickApplyDamage);
+		});
+	}
+
+	if (guigzCb) {
+		guigzCb.checked = settings.enableGuigzSpecial === true;
+		guigzCb.addEventListener("change", function () {
+			settings.enableGuigzSpecial = guigzCb.checked;
+			saveNullCalcSettings(settings);
+			if (typeof setGuigzSpecialEnabled === "function") {
+				setGuigzSpecialEnabled(guigzCb.checked);
+			}
 		});
 	}
 }
