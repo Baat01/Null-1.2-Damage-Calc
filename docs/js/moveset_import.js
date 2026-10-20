@@ -14,7 +14,22 @@ function placeBsBtn() {
 function pokemonToExportText(pokemon) {
 	var EV_counter = 0;
 	var finalText = "";
-	finalText = pokemon.name + (pokemon.item ? " @ " + pokemon.item : "") + "\n";
+	var exportSpecies = pokemon.name || (pokemon.species && pokemon.species.name) || pokemon.species || "";
+	var rawName = pokemon.name || (pokemon.species && pokemon.species.name) || "";
+	var isFemale = pokemon.gender === "F" || pokemon.gender === "Female";
+
+	// Ensure female/forme-specific species are not truncated
+	if (rawName === "Meowstic-F" || (rawName === "Meowstic" && isFemale)) {
+		exportSpecies = "Meowstic-F";
+	} else if (rawName === "Indeedee-F" || (rawName === "Indeedee" && isFemale)) {
+		exportSpecies = "Indeedee-F";
+	} else if (rawName === "Oinkologne-F" || (rawName === "Oinkologne" && isFemale)) {
+		exportSpecies = "Oinkologne-F";
+	} else if (rawName === "Basculegion-F" || (rawName === "Basculegion" && isFemale)) {
+		exportSpecies = "Basculegion-F";
+	}
+
+	finalText = exportSpecies + (pokemon.item ? " @ " + pokemon.item : "") + "\n";
 	finalText += "Level: " + pokemon.level + "\n";
 	finalText += pokemon.nature && gen > 2 ? pokemon.nature + " Nature" + "\n" : "";
 	finalText += pokemon.teraType && gen > 8 ? "Tera Type: " + pokemon.teraType : "";

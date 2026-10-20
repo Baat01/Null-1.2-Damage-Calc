@@ -1389,6 +1389,10 @@ function getActiveSpeciesNameFromPokeInfo(pokeInfo) {
 			name = pokemonName;
 		}
 	}
+	var isFem = pokeInfo.find(".gender").val() === "Female" || pokeInfo.find(".gender").val() === "F";
+	if (name === "Meowstic" && isFem) {
+		name = "Meowstic-F";
+	}
 	return name;
 }
 
@@ -1716,6 +1720,11 @@ $(".set-selector").change(function () {
 			pokeObj.find(".gender").val("");
 		} else {
 			pokeObj.find(".gender").parent().removeClass("gender-empty").show();
+			if (/-F$/.test(pokemonName) || pokemon.gender === "F") {
+				pokeObj.find(".gender").val("Female");
+			} else if (/-M$/.test(pokemonName) || pokemon.gender === "M" || pokemonName === "Meowstic") {
+				pokeObj.find(".gender").val("Male");
+			}
 		}
 	}
 	}
@@ -1949,6 +1958,11 @@ $(".forme").change(function () {
 	var altForme = pokedex[newFormeSpecies];
 	if (!altForme) return;
 	var container = formeSelect.closest(".poke-info");
+	if (/-F$/.test(newFormeSpecies)) {
+		container.find(".gender").val("Female");
+	} else if (/-M$/.test(newFormeSpecies) || newFormeSpecies === "Meowstic") {
+		container.find(".gender").val("Male");
+	}
 	container.find(".traceCopyOpponent").prop("checked", false);
 	trySwapOpposingSetForTeamMegaForme(formeSelect, newFormeSpecies);
 	var fullSetName = getFullSetNameFromPokeInfo(container);
@@ -2177,6 +2191,10 @@ function createPokemon(pokeInfo) {
 				name = pokemonName;
 			}
 		}
+		var isFem = pokeInfo.find(".gender").val() === "Female" || pokeInfo.find(".gender").val() === "F";
+		if (name === "Meowstic" && isFem) {
+			name = "Meowstic-F";
+		}
 
 		var baseStats = {};
 		var ivs = {};
@@ -2300,6 +2318,10 @@ function getSetFromForm(panelId) {
 	} else {
 		name = fullSetName.trim();
 		nameProp = "Custom Set";
+	}
+	var isFem = pokeInfo.find(".gender").val() === "Female" || pokeInfo.find(".gender").val() === "F";
+	if (name === "Meowstic" && isFem) {
+		name = "Meowstic-F";
 	}
 	if (!name) return null;
 	var evs = {};

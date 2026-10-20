@@ -10042,7 +10042,7 @@ var ZA_PATCH = {
     Magearna: { otherFormes: ['Magearna-Original', 'Magearna-Mega', 'Magearna-Original-Mega'] },
     Malamar: { otherFormes: ['Malamar-Mega'] },
     Meganium: { otherFormes: ['Meganium-Mega'] },
-    Meowstic: { otherFormes: ['Meowstic-Mega'] },
+    Meowstic: { otherFormes: ['Meowstic-F', 'Meowstic-Mega'] },
     Pyroar: { otherFormes: ['Pyroar-Mega'] },
     Scolipede: { otherFormes: ['Scolipede-Mega'] },
     Scovillain: { otherFormes: ['Scovillain-Mega'] },
