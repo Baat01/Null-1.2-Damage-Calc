@@ -615,9 +615,11 @@
             } else {
                 // calcResult.damage is not pre-split. Scale rolls proportional to each hit's base power
                 var baseRolls = Array.isArray(result.damage) ? result.damage : [result.damage];
-                var usedBP = (result.desc && result.desc.moveBP) ? result.desc.moveBP : null;
+                var usedBP = (result.rawDesc && result.rawDesc.moveBP) ||
+                             (result.desc && typeof result.desc === 'object' && result.desc.moveBP) ||
+                             null;
                 if (!usedBP) {
-                    usedBP = isTripleAxel ? (H === 1 ? 20 : (H === 2 ? 30 : 40)) : (H === 1 ? 10 : (H === 2 ? 20 : 30));
+                    usedBP = (H === 1 ? 20 : (H === 2 ? 30 : 40));
                 }
                 for (var i = 0; i < H; i++) {
                     var hitBP = escalatingBPs[i];

@@ -81,6 +81,9 @@
                 }
             }
         }
+        if (!result && checked && window.findDamageResult) {
+            result = window.findDamageResult(window.jQuery ? window.jQuery(checked) : checked);
+        }
 
         // 1. Try from damageResults and ProbabilityCalc.getFullMoveRolls
         if (result) {
@@ -90,6 +93,30 @@
                     return { rolls: r, isLeftAttacker: isLeftAttacker, result: result };
                 }
             } else if (result.damage !== undefined) {
+                var moveName = (result.move && (result.move.name || result.move.originalName)) ||
+                               (result.rawDesc && result.rawDesc.moveName) || '';
+                var isTripleAxel = (moveName === 'Triple Axel');
+                var isTripleKick = (moveName === 'Triple Kick');
+                if ((isTripleAxel || isTripleKick) && Array.isArray(result.damage)) {
+                    var escalatingBPs = isTripleAxel ? [20, 40, 60] : [10, 20, 30];
+                    var H = Math.min(escalatingBPs.length, Math.max(1, result.hits || (result.rawDesc && result.rawDesc.hits) || 3));
+                    var baseRolls = Array.isArray(result.damage[0]) ? result.damage[0] : result.damage;
+                    var usedBP = (result.rawDesc && result.rawDesc.moveBP) || (H === 1 ? 20 : (H === 2 ? 30 : 40));
+                    var hitArrays = [];
+                    for (var i = 0; i < H; i++) {
+                        var ratio = escalatingBPs[i] / usedBP;
+                        hitArrays.push(baseRolls.map(function (d) { return Math.max(1, Math.round(d * ratio)); }));
+                    }
+                    var combined = hitArrays.reduce(function (acc, curr) {
+                        if (!acc.length) return curr;
+                        var resArr = [];
+                        for (var a = 0; a < acc.length; a++) {
+                            for (var b = 0; b < curr.length; b++) resArr.push(acc[a] + curr[b]);
+                        }
+                        return resArr;
+                    }, []);
+                    return { rolls: combined, isLeftAttacker: isLeftAttacker, result: result };
+                }
                 if (typeof result.damage === 'number') {
                     return { rolls: [result.damage], isLeftAttacker: isLeftAttacker, result: result };
                 } else if (Array.isArray(result.damage) && result.damage.length > 0) {

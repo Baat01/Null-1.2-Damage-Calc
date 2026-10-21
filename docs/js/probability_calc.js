@@ -112,6 +112,94 @@
             return [dmg[0] + dmg[1]];
         }
 
+        // Case Escalating Multi-Hit: Triple Axel (20, 40, 60 BP) and Triple Kick (10, 20, 30 BP)
+        var moveName = '';
+        if (result && typeof result === 'object') {
+            moveName = (result.move && (result.move.name || result.move.originalName)) ||
+                       (result.rawDesc && result.rawDesc.moveName) ||
+                       '';
+        }
+        var isTripleAxel = (moveName === 'Triple Axel');
+        var isTripleKick = (moveName === 'Triple Kick');
+        if (isTripleAxel || isTripleKick) {
+            var escalatingBPs = isTripleAxel ? [20, 40, 60] : [10, 20, 30];
+            var escHits = 3;
+            if (result && typeof result === 'object') {
+                var rawHits = result.hits || (result.rawDesc && result.rawDesc.hits) || (result.move && result.move.hits);
+                if (rawHits !== undefined && rawHits !== null && !isNaN(rawHits) && Number(rawHits) >= 1) {
+                    escHits = Number(rawHits);
+                }
+            }
+            if (typeof document !== 'undefined') {
+                try {
+                    var checked = document.querySelector('.result-move:checked');
+                    var id = checked ? checked.id : '';
+                    if (id) {
+                        var match = id.match(/resultMove([LR])(\d+)/);
+                        if (match) {
+                            var pSide = match[1] === 'L' ? '#p1' : '#p2';
+                            var mIdx = match[2];
+                            var hitsEl = document.querySelector(pSide + ' .move:nth-of-type(' + mIdx + ') .move-hits:not(.hide), ' +
+                                                                pSide + ' .moveGroup:nth-of-type(' + mIdx + ') .move-hits:not(.hide)');
+                            if (hitsEl && hitsEl.value) {
+                                var pVal = parseInt(hitsEl.value, 10);
+                                if (!isNaN(pVal) && pVal >= 1) escHits = pVal;
+                            }
+                        }
+                    }
+                } catch (e) {}
+            }
+            var H = Math.min(escalatingBPs.length, Math.max(1, escHits));
+
+            if (Array.isArray(dmg[0])) {
+                var hitArrays = [];
+                for (var i = 0; i < H; i++) {
+                    hitArrays.push(dmg[i] || dmg[0]);
+                }
+                if (H === 1) return hitArrays[0].slice();
+                return hitArrays.reduce(function (acc, hitRolls) {
+                    if (!acc.length) return hitRolls;
+                    var combined = [];
+                    for (var a = 0; a < acc.length; a++) {
+                        for (var b = 0; b < hitRolls.length; b++) {
+                            combined.push(acc[a] + hitRolls[b]);
+                        }
+                    }
+                    return combined;
+                }, []);
+            }
+
+            var baseRolls = dmg.slice();
+            var usedBP = (result.rawDesc && result.rawDesc.moveBP) ||
+                         (result.desc && typeof result.desc === 'object' && result.desc.moveBP) ||
+                         null;
+            if (!usedBP) {
+                usedBP = (H === 1 ? 20 : (H === 2 ? 30 : 40));
+            }
+
+            var hitArrays = [];
+            for (var i = 0; i < H; i++) {
+                var hitBP = escalatingBPs[i];
+                var ratio = hitBP / usedBP;
+                var scaledRolls = baseRolls.map(function (d) {
+                    return Math.max(1, Math.round(d * ratio));
+                });
+                hitArrays.push(scaledRolls);
+            }
+
+            if (H === 1) return hitArrays[0];
+            return hitArrays.reduce(function (acc, hitRolls) {
+                if (!acc.length) return hitRolls;
+                var combined = [];
+                for (var a = 0; a < acc.length; a++) {
+                    for (var b = 0; b < hitRolls.length; b++) {
+                        combined.push(acc[a] + hitRolls[b]);
+                    }
+                }
+                return combined;
+            }, []);
+        }
+
         // Case B: dmg is an array of numbers, but hits > 1
         var hits = 1;
         if (result && typeof result === 'object' && result.damage !== undefined) {
