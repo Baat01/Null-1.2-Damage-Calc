@@ -12,9 +12,9 @@
  *                                  least one roll actually reaches hp (matching Python).
  *     returns    : number[]     -- probability for each move to be selected (0-100)
  *
- * Feature 2  -- Compound KO Probability across N moves (2-7)
+ * Feature 2  -- Compound KO Probability across N moves (2+)
  *   computeMultiRollKillProba(rollArrays, hp)
- *     rollArrays : Array of 2-7 number[]
+ *     rollArrays : Array of number[] (2+)
  *     hp         : number        -- target HP to reach for KO
  *     returns    : number        -- probability (0-100) that the sum >= hp
  *
@@ -29,6 +29,41 @@
     /* =========================================================================
      * MULTI-HIT NORMALISATION
      * ====================================================================== */
+
+    function convolveAndSample(arrays, sampleSize) {
+        var dp = { '0': 1 };
+        var total = 1;
+        for (var i = 0; i < arrays.length; i++) {
+            var arr = arrays[i];
+            if (!arr || !arr.length) continue;
+            var nextDp = {};
+            var keys = Object.keys(dp);
+            for (var ki = 0; ki < keys.length; ki++) {
+                var s = +keys[ki];
+                var c = dp[keys[ki]];
+                for (var j = 0; j < arr.length; j++) {
+                    var ns = '' + (s + arr[j]);
+                    nextDp[ns] = (nextDp[ns] || 0) + c;
+                }
+            }
+            dp = nextDp;
+            total *= arr.length;
+        }
+        var sortedSums = Object.keys(dp).map(Number).sort(function (a, b) { return a - b; });
+        var sample = [];
+        var count = sampleSize || 16;
+        var cum = 0;
+        var curIdx = 0;
+        for (var q = 0; q < count; q++) {
+            var targetWays = (q + 0.5) * (total / count);
+            while (curIdx < sortedSums.length - 1 && cum + dp[sortedSums[curIdx]] < targetWays) {
+                cum += dp[sortedSums[curIdx]];
+                curIdx++;
+            }
+            sample.push(sortedSums[curIdx]);
+        }
+        return sample;
+    }
 
     /**
      * getFullMoveRolls(result)
@@ -56,16 +91,19 @@
 
         // Case A: dmg is an array of arrays [[...], [...]]
         if (Array.isArray(dmg[0])) {
-            return dmg.reduce(function (acc, hitRolls) {
-                if (!acc.length) return hitRolls;
-                var combined = [];
-                for (var a = 0; a < acc.length; a++) {
-                    for (var b = 0; b < hitRolls.length; b++) {
-                        combined.push(acc[a] + hitRolls[b]);
+            if (dmg.length <= 3) {
+                return dmg.reduce(function (acc, hitRolls) {
+                    if (!acc.length) return hitRolls;
+                    var combined = [];
+                    for (var a = 0; a < acc.length; a++) {
+                        for (var b = 0; b < hitRolls.length; b++) {
+                            combined.push(acc[a] + hitRolls[b]);
+                        }
                     }
-                }
-                return combined;
-            }, []);
+                    return combined;
+                }, []);
+            }
+            return convolveAndSample(dmg, 16);
         }
 
         // Fixed 2-hit damage: [n, n] without multi-roll hits
@@ -82,17 +120,22 @@
 
         if (typeof dmg[0] === 'number') {
             if (hits > 1) {
-                var combined = dmg.slice();
-                for (var h = 1; h < hits; h++) {
-                    var next = [];
-                    for (var a = 0; a < combined.length; a++) {
-                        for (var b = 0; b < dmg.length; b++) {
-                            next.push(combined[a] + dmg[b]);
+                if (hits <= 3) {
+                    var combined = dmg.slice();
+                    for (var h = 1; h < hits; h++) {
+                        var next = [];
+                        for (var a = 0; a < combined.length; a++) {
+                            for (var b = 0; b < dmg.length; b++) {
+                                next.push(combined[a] + dmg[b]);
+                            }
                         }
+                        combined = next;
                     }
-                    combined = next;
+                    return combined;
                 }
-                return combined;
+                var hitArrays = [];
+                for (var hi = 0; hi < hits; hi++) hitArrays.push(dmg);
+                return convolveAndSample(hitArrays, 16);
             }
             return dmg.slice();
         }
@@ -260,19 +303,19 @@
     }
 
     /* =========================================================================
-     * FEATURE 2 - COMPOUND KO PROBABILITY (2-7 moves, DP convolution)
+     * FEATURE 2 - COMPOUND KO PROBABILITY (2+ moves, DP convolution)
      * ====================================================================== */
 
     /**
      * computeMultiRollThresholdProba(rollArrays, initialHP, minRemainingHP)
      *
-     * Computes the compound probability distribution across 2-7 moves.
+     * Computes the compound probability distribution across 2 or more moves.
      * Supports both standard KO threshold and Target Remaining HP threshold.
      */
     function computeMultiRollThresholdProba(rollArrays, initialHP, minRemainingHP) {
         var k = rollArrays.length;
-        if (k < 2 || k > 7) {
-            throw new Error('computeMultiRollThresholdProba supports 2-7 moves, got ' + k);
+        if (k < 2) {
+            throw new Error('computeMultiRollThresholdProba supports 2 or more moves, got ' + k);
         }
 
         var rem = (minRemainingHP !== undefined && minRemainingHP !== null) ? +minRemainingHP : 0;

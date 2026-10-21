@@ -20,7 +20,6 @@
     /* =========================================================================
      * CONSTANTS
      * ====================================================================== */
-    var MAX_MOVE_ROWS = 7;
     var PROBA_STORAGE_KEY = 'nullProbaCalcState';
     var PC = window.ProbabilityCalc;
 
@@ -29,7 +28,8 @@
      * ====================================================================== */
     function getOverlapRollSetting() {
         try {
-            var raw = localStorage.getItem('nullCalcSettings');
+            var storage = window.localStorage || localStorage;
+            var raw = storage.getItem('nullCalcSettings');
             if (raw) {
                 var s = JSON.parse(raw);
                 return s.showOverlapRoll === true;
@@ -40,10 +40,11 @@
 
     function saveOverlapRollSetting(val) {
         try {
-            var raw = localStorage.getItem('nullCalcSettings');
+            var storage = window.localStorage || localStorage;
+            var raw = storage.getItem('nullCalcSettings');
             var s = raw ? JSON.parse(raw) : {};
             s.showOverlapRoll = val;
-            localStorage.setItem('nullCalcSettings', JSON.stringify(s));
+            storage.setItem('nullCalcSettings', JSON.stringify(s));
         } catch (e) {}
     }
 
@@ -58,7 +59,8 @@
 
     function loadProbaState() {
         try {
-            var raw = localStorage.getItem(PROBA_STORAGE_KEY);
+            var storage = window.localStorage || localStorage;
+            var raw = storage.getItem(PROBA_STORAGE_KEY);
             if (raw) {
                 var parsed = JSON.parse(raw);
                 if (parsed.rows && Array.isArray(parsed.rows)) {
@@ -76,7 +78,8 @@
 
     function saveProbaState() {
         try {
-            localStorage.setItem(PROBA_STORAGE_KEY, JSON.stringify(probaState));
+            var storage = window.localStorage || localStorage;
+            storage.setItem(PROBA_STORAGE_KEY, JSON.stringify(probaState));
         } catch (e) {}
     }
 
@@ -308,7 +311,19 @@
     function updateAddRowButtonState() {
         var btn = document.getElementById('proba-add-row-btn');
         if (!btn) return;
-        btn.disabled = probaState.rows.length >= MAX_MOVE_ROWS;
+        btn.disabled = false;
+    }
+
+    /**
+     * Formats integer denominator for 1/x probability display with space grouping
+     * when x exceeds 3 digits (e.g. 10 000, 1 000 000).
+     */
+    function formatDenominator(val) {
+        if (val === null || val === undefined) return '';
+        var num = Math.round(Number(val));
+        if (isNaN(num)) return String(val);
+        if (!isFinite(num)) return '\u221E';
+        return String(num).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
     }
 
     /* =========================================================================
@@ -371,7 +386,7 @@
                     resultArea.classList.add('proba-result--ready');
                     mainLine = rounded + ' chance to KO';
                     var n = Math.round(100 / prob);
-                    fracLine = '~1/' + n + ' chance de KO';
+                    fracLine = '~1/' + formatDenominator(n) + ' chance de KO';
                 }
             } else {
                 // Threshold mode: leave at least minRem HP vs drop below minRem HP
@@ -393,7 +408,7 @@
                     mainLine = roundedSurv + ' chance to leave at least ' + minRem + ' HP (' + roundedDrop + ' to drop below)';
                     var nDrop = Math.max(1, Math.round(100 / drop));
                     var nSurv = Math.max(1, Math.round(100 / surv));
-                    fracLine = '~1/' + nDrop + ' chance to drop below ' + minRem + ' HP' + (nSurv > 1 ? ' (\u22481/' + nSurv + ' to survive)' : '');
+                    fracLine = '~1/' + formatDenominator(nDrop) + ' chance to drop below ' + minRem + ' HP' + (nSurv > 1 ? ' (\u22481/' + formatDenominator(nSurv) + ' to survive)' : '');
                 }
             }
 
@@ -403,6 +418,74 @@
         } catch (err) {
             resultArea.innerHTML = '<span class="proba-result-placeholder">Error: ' + err.message + '</span>';
         }
+    }
+
+    /* =========================================================================
+     * BATCH INSERTION & DYNAMIC ROW GENERATION HELPER
+     * ====================================================================== */
+    /**
+     * Batch inserts an array of move/hit objects into the Probability Calculator.
+     * hitsArray: [ { name: "Move (Hit 1)", rolls: [number] | string }, ... ]
+     *
+     * Rules:
+     *   - Fills existing empty rows first.
+     *   - If all existing rows are occupied or more hits are needed, dynamically appends new rows.
+     *   - No 7-move limit (dynamically expands for Population Bomb 10-hit, multi-turn sequences, etc.).
+     *   - Syncs HP, modal DOM elements, and triggers compound KO recalculation.
+     */
+    function addMultipleMoveRows(hitsArray) {
+        if (!hitsArray || !hitsArray.length) return 0;
+
+        loadProbaState();
+
+        // Fill HP from P1 if empty
+        if (!probaState.hp || probaState.hp === '0') {
+            var p1HP = getP1CurrentHP();
+            if (p1HP > 0) probaState.hp = String(p1HP);
+        }
+
+        var addedCount = 0;
+        hitsArray.forEach(function (hit) {
+            var rollsStr = '';
+            if (Array.isArray(hit.rolls)) {
+                rollsStr = hit.rolls.join(', ');
+            } else if (hit.rolls !== undefined && hit.rolls !== null) {
+                rollsStr = String(hit.rolls);
+            }
+            if (!rollsStr) return;
+
+            // 1. Look for the first empty row
+            var emptyIdx = -1;
+            for (var i = 0; i < probaState.rows.length; i++) {
+                var r = probaState.rows[i];
+                if (!r || !r.rolls || !r.rolls.trim()) {
+                    emptyIdx = i;
+                    break;
+                }
+            }
+
+            if (emptyIdx !== -1) {
+                probaState.rows[emptyIdx] = {
+                    name: hit.name || '',
+                    rolls: rollsStr
+                };
+            } else {
+                probaState.rows.push({
+                    name: hit.name || '',
+                    rolls: rollsStr
+                });
+            }
+            addedCount++;
+        });
+
+        if (addedCount > 0) {
+            saveProbaState();
+            renderHP();
+            renderModalRows();
+            updateProbaResult();
+        }
+
+        return addedCount;
     }
 
     /* =========================================================================
@@ -422,16 +505,16 @@
 
         var result = null;
         var moveName = '';
-        for (var side = 0; side < resultLocations.length; side++) {
-            for (var mi = 0; mi < resultLocations[side].length; mi++) {
-                if (resultLocations[side][mi].move === '#' + id) {
-                    var r = window.damageResults[side][mi];
-                    if (r) {
-                        result = r;
-                        // Try to get move name from label
-                        var label = document.querySelector('label[for="' + id + '"]');
-                        moveName = label ? label.textContent.trim() : ('Move ' + (mi + 1));
-                    }
+        var side = -1;
+        var mi = -1;
+        for (var s = 0; s < resultLocations.length; s++) {
+            for (var m = 0; m < resultLocations[s].length; m++) {
+                if (resultLocations[s][m].move === '#' + id) {
+                    side = s;
+                    mi = m;
+                    result = window.damageResults[s] ? window.damageResults[s][m] : null;
+                    var label = document.querySelector('label[for="' + id + '"]');
+                    moveName = label ? label.textContent.trim() : ('Move ' + (m + 1));
                     break;
                 }
             }
@@ -440,39 +523,156 @@
 
         if (!result) return;
 
-        // Extract total damage rolls, handling multi-hit moves via getFullMoveRolls
-        var rolls = PC.getFullMoveRolls ? PC.getFullMoveRolls(result) : PC.flattenDamage(result);
-        if (rolls.length === 0) return;
+        var panelSelector = (side === 0) ? '#p1' : '#p2';
+        var moveContainer = window.$ ? window.$(panelSelector).find('.move' + (mi + 1)) : null;
 
-        // Load current state
-        loadProbaState();
+        var canonicalMoveName = (result.move && (result.move.name || result.move.originalName)) || moveName;
+        var isPopBomb = (canonicalMoveName === 'Population Bomb');
 
-        // Fill HP from P1 if empty
-        if (!probaState.hp || probaState.hp === '0') {
-            var p1HP = getP1CurrentHP();
-            if (p1HP > 0) probaState.hp = String(p1HP);
+        // Hit Count Detection:
+        // Read active hit count from DOM select element .move-hits:visible associated with the active move
+        var isMulti = false;
+        var hitsSelect = null;
+        if (moveContainer && moveContainer.length) {
+            var visibleHits = moveContainer.find(".move-hits:visible, select.move-hits:visible");
+            if (visibleHits.length && visibleHits.is(':visible') && !visibleHits.hasClass('hide')) {
+                isMulti = true;
+                hitsSelect = visibleHits;
+            }
         }
 
-        // Find first empty slot or append
-        var inserted = false;
-        if (probaState.rows.length < MAX_MOVE_ROWS) {
-            probaState.rows.push({
-                name: moveName,
-                rolls: rolls.join(', ')
+        // Check metadata from calculation result (hits on result, rawDesc, or move)
+        var resHits = (result.hits !== undefined && result.hits !== null && !isNaN(result.hits)) ? Number(result.hits) : 0;
+        var rawDescHits = (result.rawDesc && result.rawDesc.hits !== undefined && !isNaN(result.rawDesc.hits)) ? Number(result.rawDesc.hits) : 0;
+        var moveHits = (result.move && result.move.hits !== undefined && !isNaN(result.move.hits)) ? Number(result.move.hits) : 0;
+        var metaHits = resHits || rawDescHits || moveHits;
+
+        if (metaHits > 1) isMulti = true;
+        if (Array.isArray(result.damage) && Array.isArray(result.damage[0])) isMulti = true;
+        if (canonicalMoveName === 'Triple Axel' || canonicalMoveName === 'Triple Kick' || isPopBomb) isMulti = true;
+        if (window.calc && window.calc.MOVES) {
+            var genNum = typeof window.gen !== 'undefined' ? window.gen : 9;
+            var genMoves = window.calc.MOVES[genNum];
+            if (genMoves && genMoves[canonicalMoveName] && genMoves[canonicalMoveName].multihit) isMulti = true;
+        }
+        if (window.moves && window.moves[canonicalMoveName] && window.moves[canonicalMoveName].multihit) isMulti = true;
+
+        var hitCount = 1;
+        if (isMulti) {
+            if (hitsSelect && hitsSelect.length) {
+                var parsedVal = parseInt(hitsSelect.val(), 10);
+                if (!isNaN(parsedVal) && parsedVal >= 1) {
+                    hitCount = parsedVal;
+                }
+            } else if (metaHits >= 1) {
+                hitCount = metaHits;
+            } else if (isPopBomb) {
+                hitCount = 10;
+            }
+
+            // For Population Bomb: ensure hitCount correctly reads active value from .move-hits:visible
+            // or result.hits up to 10.
+            if (isPopBomb) {
+                if (hitsSelect && hitsSelect.length) {
+                    var parsedVal = parseInt(hitsSelect.val(), 10);
+                    if (!isNaN(parsedVal) && parsedVal >= 1) {
+                        hitCount = parsedVal;
+                    } else if (metaHits >= 1) {
+                        hitCount = metaHits;
+                    } else {
+                        hitCount = 10;
+                    }
+                } else if (metaHits >= 1) {
+                    hitCount = metaHits;
+                } else {
+                    hitCount = 10;
+                }
+                hitCount = Math.min(10, Math.max(1, hitCount));
+            }
+        }
+        if (isNaN(hitCount) || hitCount < 1) hitCount = 1;
+
+        var isTripleAxel = (canonicalMoveName === 'Triple Axel');
+        var isTripleKick = (canonicalMoveName === 'Triple Kick');
+        var isEscalating = isTripleAxel || isTripleKick;
+
+        var hitsArray = [];
+
+        if (isEscalating) {
+            // Escalating multi-hit: Triple Axel (20, 40, 60 BP), Triple Kick (10, 20, 30 BP)
+            var escalatingBPs = isTripleAxel ? [20, 40, 60] : [10, 20, 30];
+            var H = Math.min(escalatingBPs.length, Math.max(1, hitCount));
+
+            if (Array.isArray(result.damage) && Array.isArray(result.damage[0])) {
+                // calcResult.damage is pre-split into arrays for each hit
+                for (var i = 0; i < H; i++) {
+                    var hitRolls = result.damage[i] || result.damage[0];
+                    hitsArray.push({
+                        name: canonicalMoveName + ' (Hit ' + (i + 1) + ')',
+                        rolls: hitRolls
+                    });
+                }
+            } else {
+                // calcResult.damage is not pre-split. Scale rolls proportional to each hit's base power
+                var baseRolls = Array.isArray(result.damage) ? result.damage : [result.damage];
+                var usedBP = (result.desc && result.desc.moveBP) ? result.desc.moveBP : null;
+                if (!usedBP) {
+                    usedBP = isTripleAxel ? (H === 1 ? 20 : (H === 2 ? 30 : 40)) : (H === 1 ? 10 : (H === 2 ? 20 : 30));
+                }
+                for (var i = 0; i < H; i++) {
+                    var hitBP = escalatingBPs[i];
+                    var ratio = hitBP / usedBP;
+                    var scaledRolls = baseRolls.map(function (d) {
+                        return Math.max(1, Math.round(d * ratio));
+                    });
+                    hitsArray.push({
+                        name: canonicalMoveName + ' (Hit ' + (i + 1) + ')',
+                        rolls: scaledRolls
+                    });
+                }
+            }
+        } else if (Array.isArray(result.damage) && Array.isArray(result.damage[0])) {
+            // Pre-split array of arrays (e.g. Parental Bond)
+            var count = Math.min(result.damage.length, hitCount > 1 ? hitCount : result.damage.length);
+            for (var i = 0; i < count; i++) {
+                hitsArray.push({
+                    name: canonicalMoveName + (count > 1 ? ' (Hit ' + (i + 1) + ')' : ''),
+                    rolls: result.damage[i]
+                });
+            }
+        } else if (hitCount > 1 || isPopBomb) {
+            // Regular multi-hit with constant base power (Rock Blast, Bullet Seed, Population Bomb, Dual Wingbeat, etc.)
+            var singleHitRolls = Array.isArray(result.damage) ? result.damage.slice() : [result.damage];
+            var count = Math.max(1, hitCount);
+            for (var i = 0; i < count; i++) {
+                hitsArray.push({
+                    name: canonicalMoveName + ' (Hit ' + (i + 1) + ')',
+                    rolls: singleHitRolls.slice()
+                });
+            }
+        } else {
+            // Standard single-hit move
+            var singleRolls = Array.isArray(result.damage) ? result.damage.slice() : [result.damage];
+            hitsArray.push({
+                name: canonicalMoveName,
+                rolls: singleRolls
             });
-            inserted = true;
         }
 
-        if (inserted) {
-            saveProbaState();
-            // Visual feedback
+        if (!hitsArray.length) return;
+
+        var addedCount = addMultipleMoveRows(hitsArray);
+
+        if (addedCount > 0) {
             var btn = document.getElementById('btn-add-to-proba');
             if (btn) {
+                if (btn._flashTimeout) clearTimeout(btn._flashTimeout);
                 btn.classList.add('added-flash', 'proba-added');
-                btn.textContent = '\u2713 Added';
-                setTimeout(function () {
+                btn.textContent = addedCount > 1 ? ('\u2713 Added (' + addedCount + ' hits)') : '\u2713 Added';
+                btn._flashTimeout = setTimeout(function () {
                     btn.classList.remove('added-flash', 'proba-added');
                     btn.textContent = '[+]';
+                    btn._flashTimeout = null;
                 }, 1400);
             }
         }
@@ -582,6 +782,22 @@
     // Expose so index_randoms_controls can call it after performCalculations
     window.updateOverlapBadges = updateOverlapBadges;
 
+    // Expose UI helpers and state for external integration and testing
+    window.ProbabilityCalcUI = {
+        probaState: probaState,
+        addMultipleMoveRows: addMultipleMoveRows,
+        handleAddToProba: handleAddToProba,
+        openModal: openModal,
+        closeModal: closeModal,
+        renderModalRows: renderModalRows,
+        updateProbaResult: updateProbaResult,
+        formatDenominator: formatDenominator
+    };
+    if (PC) {
+        PC.addMultipleMoveRows = addMultipleMoveRows;
+        PC.formatDenominator = formatDenominator;
+    }
+
     /* =========================================================================
      * INIT — runs after DOM is ready
      * ====================================================================== */
@@ -606,9 +822,11 @@
         var closeBtn = document.getElementById('proba-modal-close');
         if (closeBtn) closeBtn.addEventListener('click', closeModal);
 
-        overlay.addEventListener('click', function (e) {
-            if (e.target === overlay) closeModal();
-        });
+        if (overlay) {
+            overlay.addEventListener('click', function (e) {
+                if (e.target === overlay) closeModal();
+            });
+        }
 
         document.addEventListener('keydown', function (e) {
             if (e.key === 'Escape' && overlay && overlay.classList.contains('proba-open')) {
@@ -639,7 +857,6 @@
         var addRowBtn = document.getElementById('proba-add-row-btn');
         if (addRowBtn) {
             addRowBtn.addEventListener('click', function () {
-                if (probaState.rows.length >= MAX_MOVE_ROWS) return;
                 probaState.rows.push({ name: '', rolls: '' });
                 saveProbaState();
                 renderModalRows();
