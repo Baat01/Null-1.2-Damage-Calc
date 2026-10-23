@@ -3,9 +3,9 @@
  * Connects to the local Vs. Link / Vs. Recorder server on port 31123.
  *
  * Features:
- *   1. Manual one-shot sync button  (🔄 Synchroniser Maintenant)
- *   2. Auto-Sync toggle with polling loop  (🔁 Auto-Sync : ON/OFF)
- *   3. "Sans objets / No Items" checkbox — strips held items on import
+ *   1. Manual one-shot sync button  (🔄 Sync Now)
+ *   2. Auto-Sync toggle with polling loop  (🔁 Auto-Sync: ON/OFF)
+ *   3. "No Held Items" checkbox — strips held items on import
  *   4. Set name mirrors native Import button (.import-name-text or "Custom Set")
  *      All Pokémon (nicknamed or not) use the set name field value.
  */
@@ -232,7 +232,7 @@ function updateStatusUI(message, isError = false) {
     el.textContent = message;
     if (isError) {
         el.style.color = "#ff6b6b";
-    } else if (message === "Déconnecté" || message === "Recherche...") {
+    } else if (message === "Disconnected" || message === "Searching..." || message === "Déconnecté" || message === "Recherche...") {
         el.style.color = "#a0aab5";
     } else {
         el.style.color = "#4ade80";
@@ -252,9 +252,9 @@ async function fetchMgbaRaw() {
         response = await fetch(MGBA_SYNC_URL);
         if (!response.ok) response = await fetch(FALLBACK_URL);
     } catch (_) {
-        throw new Error("mGBA non détecté");
+        throw new Error("mGBA not detected");
     }
-    if (!response.ok) throw new Error("mGBA non détecté");
+    if (!response.ok) throw new Error("mGBA not detected");
     return response.text();
 }
 
@@ -262,7 +262,7 @@ async function fetchMgbaRaw() {
 
 /**
  * Perform a single, unconditional import (no hash guard).
- * Called by the "Synchroniser Maintenant" button.
+ * Called by the "Sync Now" button.
  */
 async function triggerManualSync() {
     if (SyncState.MANUAL_FETCHING) return;
@@ -275,7 +275,7 @@ async function triggerManualSync() {
         btn.disabled    = true;
         btn.textContent = "Syncing...";
     }
-    updateStatusUI("Recherche...");
+    updateStatusUI("Searching...");
 
     try {
         const stripItems = SyncState.SETTINGS.stripItems;
@@ -287,12 +287,12 @@ async function triggerManualSync() {
         SyncState.LAST_HASH = null;
 
         const timeStr = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-        updateStatusUI(`Sync manuel : ${count} Pokémon (${timeStr})`);
+        updateStatusUI(`Manual Sync: ${count} Pokémon (${timeStr})`);
         if (btn) btn.textContent = `${count} OK`;
 
     } catch (err) {
-        updateStatusUI("Erreur: mGBA non détecté", true);
-        if (btn) btn.textContent = "Erreur";
+        updateStatusUI("Error: mGBA not detected", true);
+        if (btn) btn.textContent = "Error";
 
     } finally {
         SyncState.MANUAL_FETCHING = false;
@@ -314,7 +314,7 @@ async function triggerManualSync() {
 async function pollServer() {
     if (!SyncState.ENABLED) return;
 
-    updateStatusUI("Recherche...");
+    updateStatusUI("Searching...");
 
     try {
         const stripItems = SyncState.SETTINGS.stripItems;
@@ -326,12 +326,12 @@ async function pollServer() {
             const data    = JSON.parse(rawText);
             const count   = processPayload(data, { stripItems });
             const timeStr = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-            updateStatusUI(`Connecté (${count} Pokémon synchronisés — ${timeStr})`);
+            updateStatusUI(`Connected (${count} Pokémon synced — ${timeStr})`);
         }
         // Hash unchanged: connection OK but nothing new → leave the last status message.
 
     } catch (err) {
-        updateStatusUI("Erreur: mGBA non détecté", true);
+        updateStatusUI("Error: mGBA not detected", true);
     }
 
     if (SyncState.ENABLED) {
@@ -346,7 +346,7 @@ function toggleSync() {
 
     const btn = document.getElementById("mgba-sync-btn");
     if (btn) {
-        btn.textContent = SyncState.ENABLED ? "Auto-Sync : ON" : "Auto-Sync : OFF";
+        btn.textContent = SyncState.ENABLED ? "Auto-Sync: ON" : "Auto-Sync: OFF";
         btn.classList.toggle("bs-btn-success", SyncState.ENABLED);
         btn.classList.toggle("bs-btn-default", !SyncState.ENABLED);
     }
@@ -358,7 +358,7 @@ function toggleSync() {
         pollServer();
     } else {
         if (SyncState.TIMEOUT_ID) clearTimeout(SyncState.TIMEOUT_ID);
-        updateStatusUI("Déconnecté");
+        updateStatusUI("Disconnected");
     }
 }
 
@@ -408,26 +408,26 @@ function injectUI() {
     syncBox.innerHTML = `
         <!-- Auto-Sync Header Badge with Companion Repo Link -->
         <div style="display:flex; justify-content:center; align-items:center; margin-bottom:10px;">
-            <a href="https://github.com/Baat01/vs-link-null" target="_blank" rel="noopener noreferrer" class="mgba-sync-title-badge" title="Accéder au dépôt mGBA Auto-Sync (vs-link-null)">Auto-Sync</a>
+            <a href="https://github.com/Baat01/vs-link-null" target="_blank" rel="noopener noreferrer" class="mgba-sync-title-badge" title="Access mGBA Auto-Sync repository (vs-link-null)">Auto-Sync</a>
         </div>
         <!-- Row 1: action buttons + live status -->
         <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:8px;">
             <button id="mgba-sync-now-btn"
                     class="bs-btn bs-btn-primary"
                     style="font-weight:bold; white-space:nowrap;"
-                    title="Import unique depuis mGBA (sans boucle de polling)">
-                Synchroniser Maintenant
+                    title="One-time import from mGBA (no polling loop)">
+                Sync Now
             </button>
             <button id="mgba-sync-btn"
                     class="bs-btn ${SyncState.ENABLED ? 'bs-btn-success' : 'bs-btn-default'}"
                     style="font-weight:bold; white-space:nowrap;"
-                    title="Activer / désactiver la synchronisation automatique en boucle">
-                Auto-Sync : ${SyncState.ENABLED ? 'ON' : 'OFF'}
+                    title="Enable / disable continuous auto-synchronization">
+                Auto-Sync: ${SyncState.ENABLED ? 'ON' : 'OFF'}
             </button>
             <span id="mgba-sync-status"
                   style="flex-grow:1; font-size:0.9em; color:#a0aab5;
                          min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                ${SyncState.ENABLED ? 'Recherche...' : 'Déconnecté'}
+                ${SyncState.ENABLED ? 'Searching...' : 'Disconnected'}
             </span>
         </div>
         <!-- Row 2: filter checkboxes -->
@@ -435,18 +435,18 @@ function injectUI() {
             <label style="display:flex; align-items:center; gap:4px; cursor:pointer;">
                 <input type="checkbox" id="mgba-sync-pc"
                        ${SyncState.SETTINGS.includePc ? 'checked' : ''}>
-                Inclure les boîtes PC
+                Include PC Boxes
             </label>
             <label style="display:flex; align-items:center; gap:4px; cursor:pointer;">
                 <input type="checkbox" id="mgba-sync-deadbox"
                        ${SyncState.SETTINGS.excludeDeadBox ? 'checked' : ''}>
-                Exclure la Dead Box (Boîtes 11 à 13)
+                Exclude Dead Box (Boxes 11 to 13)
             </label>
             <label style="display:flex; align-items:center; gap:4px; cursor:pointer;"
-                   title="Importe les Pokémon sans leur objet tenu">
+                   title="Import Pokémon without held items">
                 <input type="checkbox" id="mgba-sync-strip-items"
                        ${SyncState.SETTINGS.stripItems ? 'checked' : ''}>
-                Sans objets / No Items
+                No Held Items
             </label>
         </div>
     `;
