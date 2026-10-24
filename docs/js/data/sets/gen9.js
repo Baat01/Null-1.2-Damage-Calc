@@ -26264,6 +26264,20 @@ var SETDEX_SV = {
       "nature": "Mild",
       "item": "Fire Gem",
       "index": 1737
+    },
+    "Pokémaniac Darm": {
+      "level": 100,
+      "ability": "Sheer Force",
+      "status": "Healthy",
+      "moves": [
+        "Fire Blast",
+        "Future Sight",
+        "Grass Knot",
+        "Yawn"
+      ],
+      "nature": "Modest",
+      "item": "Quick Claw",
+      "index": 2215
     }
   },
   "Manectric-Mega": {
@@ -27514,6 +27528,20 @@ var SETDEX_SV = {
       "nature": "Jolly",
       "item": "Focus Band",
       "index": 1570
+    },
+    "Pokémaniac Darm": {
+      "level": 100,
+      "ability": "Inner Focus",
+      "status": "Healthy",
+      "moves": [
+        "Icicle Crash",
+        "Blaze Kick",
+        "Earthquake",
+        "Power-Up Punch"
+      ],
+      "nature": "Jolly",
+      "item": "Focus Band",
+      "index": 2218
     }
   },
   "Silvally-Ice": {
@@ -35498,38 +35526,6 @@ var SETDEX_SV = {
       "nature": "Jolly",
       "item": "Mewtwonite X",
       "index": 2214
-    }
-  },
-  "Darmanitan-Zen-Mode": {
-    "Pokémaniac Darm": {
-      "level": 100,
-      "ability": "Sheer Force",
-      "status": "Healthy",
-      "moves": [
-        "Fire Blast",
-        "Future Sight",
-        "Grass Knot",
-        "Yawn"
-      ],
-      "nature": "Modest",
-      "item": "Quick Claw",
-      "index": 2215
-    }
-  },
-  "Darmanitan-Zen-Mode-Galar": {
-    "Pokémaniac Darm": {
-      "level": 100,
-      "ability": "Inner Focus",
-      "status": "Healthy",
-      "moves": [
-        "Icicle Crash",
-        "Blaze Kick",
-        "Earthquake",
-        "Power-Up Punch"
-      ],
-      "nature": "Jolly",
-      "item": "Focus Band",
-      "index": 2218
     }
   },
   "Calyrex-Shadow": {

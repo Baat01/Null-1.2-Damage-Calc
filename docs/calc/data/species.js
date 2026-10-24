@@ -9867,7 +9867,22 @@ var SV_PATCH = {
         types: ['Dragon', 'Water'],
         bs: { hp: 68, at: 50, df: 60, sa: 120, sd: 95, sp: 82 },
         weightkg: 8,
-        abilities: { 0: 'Commander' }
+        abilities: { 0: 'Commander' },
+        otherFormes: ['Tatsugiri-Droopy', 'Tatsugiri-Stretchy']
+    },
+    'Tatsugiri-Droopy': {
+        types: ['Dragon', 'Water'],
+        bs: { hp: 68, at: 50, df: 60, sa: 120, sd: 95, sp: 82 },
+        weightkg: 8,
+        abilities: { 0: 'Commander' },
+        baseSpecies: 'Tatsugiri'
+    },
+    'Tatsugiri-Stretchy': {
+        types: ['Dragon', 'Water'],
+        bs: { hp: 68, at: 50, df: 60, sa: 120, sd: 95, sp: 82 },
+        weightkg: 8,
+        abilities: { 0: 'Commander' },
+        baseSpecies: 'Tatsugiri'
     },
     'Tauros-Paldea-Combat': {
         types: ['Fighting'],
@@ -10050,7 +10065,7 @@ var ZA_PATCH = {
     Skarmory: { otherFormes: ['Skarmory-Mega'] },
     Staraptor: { otherFormes: ['Staraptor-Mega'] },
     Starmie: { otherFormes: ['Starmie-Mega'] },
-    Tatsugiri: { otherFormes: ['Tatsugiri-Mega'] },
+    Tatsugiri: { otherFormes: ['Tatsugiri-Mega', 'Tatsugiri-Droopy', 'Tatsugiri-Stretchy'] },
     Victreebel: { otherFormes: ['Victreebel-Mega'] },
     Zeraora: { otherFormes: ['Zeraora-Mega'] },
     Zygarde: { otherFormes: ['Zygarde-10%', 'Zygarde-Complete', 'Zygarde-Mega'] },

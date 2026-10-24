@@ -13,10 +13,10 @@ var GAUNTLET_LIST = [
 	{ name: "B2B", trainers: ["Picnicker Heidi & Ruin Maniac Bryan", "Picnicker Celia"] },
 	{ name: "Gauntlet", trainers: ["Pokémaniac Shikamaru", "Kindler Bakugo", "Hiker Alphonse & Picnicker Winry", "Hiker Jotaro", "Blackbelt Nob", "Collector Tully", "Psychic Marlene"] },
 	{ name: "Gauntlet", trainers: ["Jagged Pass Team Magma Grunt", "Picnicker Diana", "Triathlete Julio"] },
-	{ name: "B2B", trainers: ["Bird Keeper Chester & Youngster Deandre", "Bird Keeper Perry"] },
+	{ name: "B2B", trainers: ["Youngster Deandre & Bird Keeper Chester", "Bird Keeper Perry"] },
 	{ name: "Gauntlet", trainers: ["Psychic Kayla", "Psychic William", "Hex Maniac Tasha", "Hex Maniac Valerie", "Pokemaniac Mark", "Breeder Gabrielle", "Psychic Cedric", "Wandering Spirit"] },
 	{ name: "6v8 Doubles", trainers: ["Leader Liza", "Leader Tate"] },
-	{ name: "B2B2B", trainers: ["Space Center Team Magma Grunt #4", "Space Center Team Magma Grunt #5", "Space Center Team Magma Grunt #6"] },
+	{ name: "B2B2B", trainers: ["Space Center Team Magma Cobalt", "Space Center Team Magma Virgil", "Space Center Team Magma Terrence"] },
 	{ name: "B2B", trainers: ["Bird Keeper Halo & Ranger Jmash", "Cooltrainer Puffy"] },
 	{ name: "Random Stats & Nature", trainers: ["Sky Pillar Rayquaza"] },
 	{ name: "B2B2B", trainers: ["Team Rocket Grunt #1", "Team Rocket Grunt #2", "Team Rocket Grunt #3"] },
@@ -39,6 +39,11 @@ function trainerNamesMatch(gauntletName, setNameTrainer) {
 	if (a === b) return true;
 	if (b.indexOf(a) === 0 && (b.length === a.length || b.charAt(a.length) === " ")) return true;
 	if (a.indexOf(b) === 0 && (a.length === b.length || a.charAt(b.length) === " ")) return true;
+	if (a.indexOf(" & ") !== -1 && b.indexOf(" & ") !== -1) {
+		var aParts = a.split(" & ").map(function(s) { return s.trim(); }).sort().join(" & ");
+		var bParts = b.split(" & ").map(function(s) { return s.trim(); }).sort().join(" & ");
+		if (aParts === bParts) return true;
+	}
 	return false;
 }
 

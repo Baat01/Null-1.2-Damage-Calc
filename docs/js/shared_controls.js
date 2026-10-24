@@ -1499,6 +1499,8 @@ function resolveSetdexKey(pokemonName) {
 	if (!pokemonName || typeof setdex === "undefined") return pokemonName;
 	// Per-plate formes often have their own setdex bucket (e.g. Arceus-Grass); must win over legacy "Arceus"
 	if (setdex[pokemonName]) return pokemonName;
+	if (pokemonName === "Darmanitan-Zen-Mode" && setdex["Darmanitan-Zen"]) return "Darmanitan-Zen";
+	if (pokemonName === "Darmanitan-Zen-Mode-Galar" && setdex["Darmanitan-Galar-Zen"]) return "Darmanitan-Galar-Zen";
 	if (pokemonName.indexOf("Arceus-") === 0 && setdex["Arceus"]) return "Arceus";
 	var spec = pokedex[pokemonName];
 	if (spec && spec.baseSpecies && setdex[spec.baseSpecies]) return spec.baseSpecies;
@@ -3199,6 +3201,13 @@ function normalizeTrainerIconSpeciesName(pok_name) {
 	else if (pok_name == "Pumpkaboo-Super") pok_name = "Pumpkaboo";
 	else if (pok_name == "Mime Jr.") pok_name = "Mime%20Jr";
 	else if (pok_name == "Aegislash-Shield") pok_name = "Aegislash";
+	else if (pok_name == "Minior-Meteor") pok_name = "Minior";
+	else if (pok_name == "Darmanitan-Galar-Zen") pok_name = "Darmanitan-Zen-Mode-Galar";
+	else if (pok_name == "Darmanitan-Zen-Mode") pok_name = "Darmanitan-Zen";
+	else if (pok_name == "Darmanitan-Zen-Mode-Galar") pok_name = "Darmanitan-Zen-Mode-Galar";
+	else if (pok_name == "Floette-Mega") pok_name = "Floette-Eternal-Mega";
+	else if (pok_name == "Jangmo-o") pok_name = "Jangmo-O";
+	else if (pok_name == "Hakamo-o") pok_name = "Hakamo-O";
 	else if (/^genesect/i.test(String(pok_name || "").replace(/ /g, "-"))) pok_name = "Genesect";
 	// Gourgeist: all size formes use Gourgeist.png
 	else if (/^gourgeist-/i.test(String(pok_name || "").replace(/ /g, "-"))) pok_name = "Gourgeist";
@@ -3241,6 +3250,27 @@ function getSrcImgPokemon(poke, alwaysFullSizeIcon) {
 	// Icon file is Type-Null.png (not Type:-Null.png from space/colon rules)
 	if (poke.name === "Type: Null") {
 		iconName = "Type-Null";
+	}
+	if (poke.name === "Minior-Meteor") {
+		iconName = "Minior";
+	}
+	if (poke.name === "Darmanitan-Galar-Zen" || poke.name === "Darmanitan-Zen-Mode-Galar") {
+		iconName = "Darmanitan-Zen-Mode-Galar";
+	}
+	if (poke.name === "Darmanitan-Zen-Mode") {
+		iconName = "Darmanitan-Zen";
+	}
+	if (poke.name === "Floette-Mega") {
+		iconName = "Floette-Eternal-Mega";
+	}
+	if (poke.name === "Pumpkaboo-Super") {
+		iconName = "Pumpkaboo";
+	}
+	if (poke.name === "Jangmo-o") {
+		iconName = "Jangmo-O";
+	}
+	if (poke.name === "Hakamo-o") {
+		iconName = "Hakamo-O";
 	}
 	// All Genesect drive forms share Genesect.png (PascalCase — Linux / GitHub Pages is case-sensitive)
 	if (/^genesect/i.test(String(poke.name || "").replace(/ /g, "-"))) {
