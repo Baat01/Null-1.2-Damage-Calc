@@ -408,7 +408,7 @@ function injectUI() {
     syncBox.innerHTML = `
         <!-- Auto-Sync Header Badge with Companion Repo Link -->
         <div style="display:flex; justify-content:center; align-items:center; margin-bottom:10px;">
-            <a href="https://github.com/Baat01/vs-link-null" target="_blank" rel="noopener noreferrer" class="mgba-sync-title-badge" title="Access mGBA Auto-Sync repository (vs-link-null)">Auto-Sync</a>
+            <a href="https://github.com/Baat01/vs-link-null" target="_blank" rel="noopener noreferrer" class="mgba-sync-title-badge" title="Access mGBA Auto-Sync repository (vs-link-null)">Auto-Sync (Not updated yet for 1.2.5)</a>
         </div>
         <!-- Row 1: action buttons + live status -->
         <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:8px;">
